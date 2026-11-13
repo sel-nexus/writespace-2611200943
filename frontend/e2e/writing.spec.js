@@ -85,6 +85,51 @@ test('admin edits another author without changing original identity', async ({ p
   await expect(page.getByRole('heading', { name: 'Admin revision' })).toBeVisible();
 });
 
+test('non-owner direct edit of an existing post redirects without changing stored bytes', async ({ page }) => {
+  const nonOwner = { userId: 'other-writer', username: 'other', displayName: 'Other writer', role: 'user' };
+  await seed(page, nonOwner, [original]);
+  await page.goto('/edit/' + original.id);
+  await expect(page).toHaveURL('/blogs');
+  await expect(page.getByRole('heading', { name: 'All Blogs' })).toBeVisible();
+  await expect(page.getByRole('link', { name: original.title, exact: true })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('writespace_posts'))).toBe(JSON.stringify([original]));
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('writespace_session')))).toEqual(nonOwner);
+});
+
+test('storage-level stale write demonstration loses an update while the editor warns about overwrites', async ({ page, context }) => {
+  await seed(page, owner, [original]);
+  await page.goto('/edit/' + original.id);
+  await expect(page.getByText('Other tabs can overwrite saved changes; unsaved text here is not refreshed.', { exact: false })).toBeVisible();
+  const other = await context.newPage();
+  const errors = [];
+  other.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  other.on('pageerror', (error) => errors.push(error.message));
+  await other.goto('/blogs');
+
+  // Capture both reads before either write; the second tab retains its own stale snapshot.
+  const firstRead = await page.evaluate(() => JSON.parse(localStorage.getItem('writespace_posts')));
+  const secondRead = await other.evaluate(() => JSON.parse(localStorage.getItem('writespace_posts')));
+  expect(firstRead).toEqual([original]);
+  expect(secondRead).toEqual(firstRead);
+
+  await page.getByLabel('Title', { exact: true }).fill('First tab revision');
+  await page.getByRole('button', { name: 'Save Changes' }).click();
+  await expect(page).toHaveURL('/blog/' + original.id);
+  await expect(page.getByRole('heading', { name: 'First tab revision' })).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('writespace_posts')))).toEqual([{ ...original, title: 'First tab revision' }]);
+
+  // Storage-level demonstration only: this is not a second application mutation.
+  // App reads and writes are synchronous; pausing one Chromium tab's JS may also
+  // pause a same-renderer tab, so this does not prove an actual UI interleaving.
+  const staleWrite = secondRead.map((post) => ({ ...post, content: 'Second tab revision' }));
+  await other.evaluate((posts) => localStorage.setItem('writespace_posts', JSON.stringify(posts)), staleWrite);
+  expect(await other.evaluate(() => JSON.parse(localStorage.getItem('writespace_posts')))).toEqual([{ ...original, content: 'Second tab revision' }]);
+  await expect(page.getByRole('heading', { name: original.title })).toBeVisible();
+  await expect(page.getByLabel('Post content')).toHaveText('Second tab revision');
+  expect(errors).toEqual([]);
+  await other.close();
+});
+
 test('corruption and real storage quota failure retain input, allow retry and do not navigate', async ({ page }) => {
   await seed(page);
   await page.goto('/');

@@ -115,7 +115,10 @@ export default function LandingPage() {
             {previews.map((post) => (
               <article key={post.id} className="min-w-0 rounded-control border border-border p-6">
                 <h3 className="break-words font-editorial text-2xl">
-                  <Link to={'/blog/' + encodeURIComponent(post.id)} className="rounded-control hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <Link
+                    to={'/blog/' + encodeURIComponent(post.id)}
+                    className="rounded-control hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     {post.title}
                   </Link>
                 </h3>

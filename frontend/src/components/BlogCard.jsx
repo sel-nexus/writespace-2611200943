@@ -12,7 +12,10 @@ export function BlogCard({ post, session = null, index = 0 }) {
   return (
     <article className={'min-w-0 rounded-control border border-border border-t-2 bg-surface p-6 ' + accents[index % accents.length]}>
       <h2 className="break-words font-editorial text-2xl">
-        <Link to={'/blog/' + encodeURIComponent(post.id)} className="rounded-control hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Link
+          to={'/blog/' + encodeURIComponent(post.id)}
+          className="rounded-control hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           {post.title}
         </Link>
       </h2>

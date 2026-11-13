@@ -2,7 +2,7 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import LoginPage from './LoginPage.jsx';
 import RegisterPage from './RegisterPage.jsx';
@@ -10,11 +10,14 @@ import { Navbar } from '../components/Navbar.jsx';
 import { Avatar } from '../components/Avatar.jsx';
 import { SESSION_KEY, USERS_KEY, readSession, readUsers, writeSession } from '../utils/storage.js';
 const identity = { userId: 'u1', username:'mira', displayName:'Mira', role:'user' };
+/** Expose the exact router address for navigation assertions. */
+function Address() { return <output aria-label="Current address">{useLocation().pathname}</output>; }
 /** Compose forms and representative test-only homes inside a real router. */
 function authView(path='/login') {
   return render(
     <React.StrictMode>
       <MemoryRouter initialEntries={[path]}>
+        <Address />
         <Navbar />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -148,28 +151,36 @@ describe('role navigation and avatars',()=>{
     expect(container.querySelector('path').getAttribute('d')).toContain(role==='admin'?'M4 18':'M12 6');
   });
   it.each(['user','admin'])('offers role links and activated logout for %s',async role=>{
-    writeSession({...identity,role});const user=userEvent.setup();authView('/');
+    writeSession({...identity,role});const user=userEvent.setup();authView('/write');
     const remove=vi.spyOn(Storage.prototype,'removeItem');
     expect(screen.getByRole('link',{name:'Home',exact:true})).toHaveAttribute('href',role==='admin'?'/admin':'/blogs');
-    expect(screen.getByRole('link',{name:'Blogs',exact:true})).toHaveAttribute('href','/blogs');
+    expect(screen.getByRole('link',{name:'All Blogs',exact:true})).toHaveAttribute('href','/blogs');
+    expect(screen.getByRole('link',{name:'Write',exact:true})).toHaveAttribute('href','/write');
+    if (role === 'admin') expect(screen.getByRole('link',{name:'Users',exact:true})).toHaveAttribute('href','/users');
+    else expect(screen.queryByRole('link',{name:'Users',exact:true})).not.toBeInTheDocument();
     expect(screen.queryByRole('button',{name:'Log out'})).not.toBeInTheDocument();
     await user.click(screen.getByRole('button',{name:/Mira/}));
     expect(remove).not.toHaveBeenCalled();
-    expect(screen.queryByRole('link',{name:'Manage users'})!==null).toBe(role==='admin');
+    expect(screen.getByRole('button',{name:/Mira/})).toHaveAttribute('aria-expanded','true');
     await user.click(screen.getByRole('button',{name:'Log out'}));
     expect(readSession().value).toBeNull();
-    expect(screen.getByRole('heading',{name:'Log in'})).toBeVisible();
+    expect(screen.getByLabelText('Current address').textContent).toBe('/');
+    expect(screen.getByText('Public destination')).toBeVisible();
+    expect(screen.queryByRole('button',{name:/Mira/})).not.toBeInTheDocument();
   });
   it('keeps identity and open logout action on removal failure then supports retry',async()=>{
-    writeSession(identity);const user=userEvent.setup();authView('/');
+    writeSession(identity);const user=userEvent.setup();authView('/write');
     await user.click(screen.getByRole('button',{name:/Mira/}));
     const remove=vi.spyOn(Storage.prototype,'removeItem').mockImplementation(()=>{throw new Error('blocked');});
     await user.click(screen.getByRole('button',{name:'Log out'}));
     expect(screen.getByRole('alert')).toHaveTextContent('Could not sign out');
     expect(readSession().value).toEqual(identity);
+    expect(screen.getByLabelText('Current address').textContent).toBe('/write');
+    expect(screen.getByRole('button',{name:/Mira/})).toHaveAttribute('aria-expanded','true');
     expect(screen.getByRole('button',{name:'Log out'})).toBeVisible();remove.mockRestore();
     await user.click(screen.getByRole('button',{name:'Log out'}));
     expect(readSession().value).toBeNull();
+    expect(screen.getByLabelText('Current address').textContent).toBe('/');
   });
   it('toggles mobile disclosure, closes on route activation and escape',async()=>{
     writeSession({...identity,role:'admin'});const user=userEvent.setup();authView('/');
@@ -180,8 +191,7 @@ describe('role navigation and avatars',()=>{
     expect(toggle).toHaveAttribute('aria-expanded','false');
     expect(screen.queryByRole('button',{name:'Log out'})).not.toBeInTheDocument();
     await user.click(toggle);
-    await user.click(screen.getByRole('button',{name:/Mira/}));
-    await user.click(screen.getByRole('link',{name:'Manage users'}));
+    await user.click(screen.getByRole('link',{name:'Users',exact:true}));
     expect(screen.getByText('Accounts destination')).toBeVisible();
     expect(toggle).toHaveAttribute('aria-expanded','false');
     expect(screen.queryByRole('button',{name:'Log out'})).not.toBeInTheDocument();
@@ -197,6 +207,27 @@ describe('role navigation and avatars',()=>{
   });
 });
 
+it.each([
+  ['admin', '/admin', 'Home'], ['admin', '/blogs', 'All Blogs'],
+  ['admin', '/write', 'Write'], ['admin', '/users', 'Users'],
+  ['user', '/blogs', 'All Blogs'], ['user', '/write', 'Write'],
+])('marks %s navigation at %s with current-page semantics and indigo treatment', (role, path, activeName) => {
+  writeSession({...identity, role});
+  authView(path);
+  const links = screen.getByRole('navigation', {name:'Main navigation'}).querySelectorAll('a[aria-current="page"]');
+  expect(links).toHaveLength(1);
+  const active = screen.getByRole('link', {name:activeName, exact:true});
+  expect(active).toHaveAttribute('aria-current','page');
+  expect(active).toHaveClass('rounded-control', 'bg-primary-50', 'text-primary-700');
+  for (const name of ['Home', 'All Blogs', 'Write', ...(role === 'admin' ? ['Users'] : [])]) {
+    if (name !== activeName) {
+      const inactive = screen.getByRole('link',{name, exact:true});
+      expect(inactive).not.toHaveAttribute('aria-current','page');
+      expect(inactive).not.toHaveClass('bg-primary-50');
+    }
+  }
+});
+
 it('activates writer navigation without modifying stored identity', async () => {
   writeSession(identity);
   const user = userEvent.setup();
@@ -204,6 +235,8 @@ it('activates writer navigation without modifying stored identity', async () => 
   await user.click(screen.getByRole('button', { name: 'Toggle navigation' }));
   await user.click(screen.getByRole('link', { name: 'Write', exact: true }));
   expect(screen.getByText('Write destination')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Write', exact: true })).toHaveAttribute('aria-current', 'page');
+  expect(screen.getByRole('link', { name: 'Write', exact: true })).toHaveClass('bg-primary-50', 'text-primary-700', 'rounded-control');
   expect(screen.getByRole('button', { name: 'Toggle navigation' })).toHaveAttribute('aria-expanded', 'false');
   expect(readSession().value).toEqual(identity);
 });

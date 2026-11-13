@@ -6,6 +6,10 @@ import { currentRoleHome, logout } from '../utils/auth.js';
 import { Avatar } from './Avatar.jsx';
 
 const control = 'inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-medium hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+/** Distinguish the current navigation destination using the inherited indigo palette. */
+function navClass({ isActive }) {
+  return control + (isActive ? ' bg-primary-50 text-primary-700 hover:bg-primary-100' : '');
+}
 /** Render public or role-aware links with local menu state and fresh session reads. */
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -35,7 +39,7 @@ export function Navbar() {
     setAccountOpen(false);
     setMobileOpen(false);
     refresh((value) => value + 1);
-    navigate('/login');
+    navigate('/');
   }
   /** Close disclosure controls on keyboard escape without inventing menu semantics. */
   function closeOnEscape(event) {
@@ -54,17 +58,28 @@ export function Navbar() {
           </svg>
         </button>
         <div id="navigation-links" className={(mobileOpen ? 'flex' : 'hidden') + ' w-full flex-col gap-2 md:flex md:w-auto md:flex-row md:items-center'}>
-          <NavLink to={session ? currentRoleHome(session) : '/'} end className={control}>
-            Home
-          </NavLink>
+          {session?.role === 'user' ? (
+            <Link to={currentRoleHome(session)} className={control}>
+              Home
+            </Link>
+          ) : (
+            <NavLink to={session ? currentRoleHome(session) : '/'} end className={navClass}>
+              Home
+            </NavLink>
+          )}
           {session ? (
             <>
-              <NavLink to="/blogs" className={control}>
-                Blogs
+              <NavLink to="/blogs" className={navClass}>
+                All Blogs
               </NavLink>
-              <NavLink to="/write" className={control}>
+              <NavLink to="/write" className={navClass}>
                 Write
               </NavLink>
+              {session.role === 'admin' && (
+                <NavLink to="/users" className={navClass}>
+                  Users
+                </NavLink>
+              )}
               <div className="relative">
                 <button type="button" aria-expanded={accountOpen} aria-controls="account-links"
                   className={control} onClick={() => setAccountOpen(!accountOpen)}>
@@ -76,11 +91,7 @@ export function Navbar() {
                     <p className="px-3 py-2 text-sm text-foreground-muted">
                       {session.role === 'admin' ? 'Administrator' : 'Writer'}
                     </p>
-                    {session.role === 'admin' && (
-                      <NavLink to="/users" className={control}>
-                        Manage users
-                      </NavLink>
-                    )}
+
                     <button type="button" className={control} onClick={signOut}>
                       Log out
                     </button>
@@ -90,10 +101,10 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <NavLink to="/login" className={control}>
+              <NavLink to="/login" className={navClass}>
                 Log in
               </NavLink>
-              <NavLink to="/register" className={control}>
+              <NavLink to="/register" className={navClass}>
                 Register
               </NavLink>
             </>

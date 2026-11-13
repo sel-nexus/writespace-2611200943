@@ -109,6 +109,16 @@ function routeView(path) {
     </MemoryRouter>,
   );
 }
+it.each(['user', 'admin'])('App logs %s out to the public landing after clearing the session', async (role) => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: 'u1', username: 'mira', displayName: 'Mira', role }));
+  routeView('/write');
+  await userEvent.click(screen.getByRole('button', { name: /Mira/ }));
+  await userEvent.click(screen.getByRole('button', { name: 'Log out' }));
+  expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+  expect(screen.getByLabelText('Current address').textContent).toBe('/');
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Your thoughts. Your space. Beautifully simple.');
+  expect(screen.getByRole('navigation', { name: 'Public navigation' })).toBeVisible();
+});
 it.each(['/blogs','/blog/test','/write','/edit/test','/admin','/users'])('App denies guest direct route %s',path=>{
   routeView(path);
   expect(screen.getByLabelText('Current address')).toHaveTextContent('/login');

@@ -28,7 +28,11 @@ export default function Home() {
       <p className="mt-3 text-sm text-foreground-muted">Keep a separate copy. Concurrent tabs can overwrite each other’s updates.</p>
       {!posts.ok ? (
         <div role="alert" className="mt-8 space-y-4 rounded-control border border-border p-6 text-error-foreground">
-          <p>{posts.status === 'corrupt' ? 'Saved posts cannot be read because local data is corrupt.' : 'Posts are unavailable because browser storage cannot be read.'} No changes were made.</p>
+          <p>
+            {posts.status === 'corrupt'
+              ? 'Saved posts cannot be read because local data is corrupt.'
+              : 'Posts are unavailable because browser storage cannot be read.'} No changes were made.
+          </p>
           <p>Check browser storage access or restore a saved copy. Clearing site data loses your writing.</p>
           <button type="button" className={control} onClick={() => setPosts(readPosts())}>Retry loading posts</button>
         </div>

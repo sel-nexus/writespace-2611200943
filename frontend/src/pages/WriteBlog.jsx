@@ -129,7 +129,11 @@ function Editor({ id }) {
             </p>
           )}
           <div className="flex flex-wrap gap-3">
-            <button type="submit" className="min-h-11 rounded-control bg-primary-700 px-5 py-3 font-medium text-white hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <button
+              type="submit"
+              className={'min-h-11 rounded-control bg-primary-700 px-5 py-3 font-medium text-white hover:bg-primary-800 ' +
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'}
+            >
               {id ? 'Save Changes' : 'Publish Blog'}
             </button>
             <Link to={id && snapshot.posts.ok && post ? '/blog/' + encodeURIComponent(id) : '/blogs'} className={control}>

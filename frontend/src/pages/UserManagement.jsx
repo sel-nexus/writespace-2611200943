@@ -95,7 +95,9 @@ export default function UserManagement() {
             <table aria-label="Local accounts" className="w-full text-left text-sm">
               <thead>
                 <tr className="text-foreground-muted">
-                  {['Display name', 'Username', 'Role', 'Date joined', 'Actions'].map((label) => <th key={label} scope="col" className="p-4 font-medium">{label}</th>)}
+                  {['Display name', 'Username', 'Role', 'Date joined', 'Actions'].map((label) => (
+                    <th key={label} scope="col" className="p-4 font-medium">{label}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -108,7 +110,9 @@ export default function UserManagement() {
           </div>
         </section>
       )}
-      <p className="mt-8 text-sm text-foreground-muted">Other tabs refresh the list without discarding drafts. Concurrent changes are not transactional; the last write may overwrite another tab’s changes.</p>
+      <p className="mt-8 text-sm text-foreground-muted">
+        Other tabs refresh the list without discarding drafts. Concurrent changes are not transactional; the last write may overwrite another tab’s changes.
+      </p>
     </section>
   );
 }

@@ -62,13 +62,25 @@ export default function AdminDashboard() {
           {recent.map((post) => (
             <li key={post.id} className="flex flex-wrap items-center justify-between gap-4 py-5">
               <div className="min-w-0 break-words">
-                <Link to={'/blog/' + encodeURIComponent(post.id)} className="text-lg font-medium underline focus-visible:ring-2 focus-visible:ring-ring">{post.title}</Link>
+                <Link
+                  to={'/blog/' + encodeURIComponent(post.id)}
+                  className="text-lg font-medium underline focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {post.title}
+                </Link>
                 <p className="mt-2 text-sm text-foreground-muted">{post.authorName} · {formatDate(post.createdAt)}</p>
               </div>
               {session?.role === 'admin' && (
                 <div className="flex gap-3">
                   <Link to={'/edit/' + encodeURIComponent(post.id)} aria-label={'Edit ' + post.title} className={control}>Edit</Link>
-                  <button type="button" aria-label={'Delete ' + post.title} className={control + ' text-error-foreground'} onClick={() => removePost(post.id)}>Delete</button>
+                  <button
+                    type="button"
+                    aria-label={'Delete ' + post.title}
+                    className={control + ' text-error-foreground'}
+                    onClick={() => removePost(post.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
               )}
             </li>
@@ -76,7 +88,9 @@ export default function AdminDashboard() {
         </ul>
       </section>
       {error && <p role="alert" className="mt-4 text-error-foreground">{error}</p>}
-      <p className="mt-8 text-sm text-foreground-muted">Other tabs refresh this view. Concurrent changes are not transactional; the last write can overwrite another tab’s changes.</p>
+      <p className="mt-8 text-sm text-foreground-muted">
+        Other tabs refresh this view. Concurrent changes are not transactional; the last write can overwrite another tab’s changes.
+      </p>
     </section>
   );
 }

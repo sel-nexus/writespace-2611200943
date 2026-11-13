@@ -11,7 +11,7 @@ async function signOut(page, name) {
   await openNavigation(page);
   await page.getByRole('button', { name: new RegExp(name) }).click();
   await page.getByRole('button', { name: 'Log out', exact: true }).click();
-  await expect(page).toHaveURL('/login');
+  await expect(page).toHaveURL('/');
 }
 
 test('register, logout, invalid login and login persist a real local identity', async ({ page, consoleErrors }) => {
@@ -35,6 +35,8 @@ test('register, logout, invalid login and login persist a real local identity', 
   });
   await signOut(page, 'Mira');
   expect(await page.evaluate(() => localStorage.getItem('writespace_session'))).toBeNull();
+  await openNavigation(page);
+  await page.getByRole('navigation', { name: 'Public navigation' }).getByRole('link', { name: 'Login', exact: true }).click();
   await page.getByLabel('Username', { exact: true }).fill('mira');
   await page.getByLabel('Password', { exact: true }).fill('wrong');
   await page.getByRole('button', { name: 'Log in', exact: true }).click();
@@ -57,8 +59,7 @@ test('fixed admin logs in even with corrupt users, exposes admin links and logs 
   await expect(page).toHaveURL('/admin');
   await openNavigation(page);
   await expect(page.getByRole('link', { name: 'Home', exact: true })).toHaveAttribute('href', '/admin');
-  await page.getByRole('button', { name: /Administrator/ }).click();
-  await page.getByRole('link', { name: 'Manage users' }).click();
+  await page.getByRole('link', { name: 'Users', exact: true }).click();
   await expect(page).toHaveURL('/users');
   expect(await page.evaluate(() => localStorage.getItem('writespace_users'))).toBe('{corrupt');
   const session = await page.evaluate(() => JSON.parse(localStorage.getItem('writespace_session')));
@@ -99,7 +100,7 @@ test('nonadmin direct admin entry returns to writer home', async ({ page, consol
   await expect(page).toHaveURL('/blogs');
   await openNavigation(page);
   await page.getByRole('button', { name: /Writer/ }).click();
-  await expect(page.getByRole('link', { name: 'Manage users' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Users', exact: true })).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
 });
 test('invalid session cannot grant administrator entry', async ({ page, consoleErrors }) => {
