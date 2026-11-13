@@ -123,7 +123,7 @@ it.each([
   localStorage.setItem(SESSION_KEY,JSON.stringify({userId:'u1',username:'mira',displayName:'Mira',role}));
   routeView(path);
   expect(screen.getByLabelText('Current address')).toHaveTextContent(destination);
-  expect(screen.getByRole('heading',{level:1})).toHaveTextContent('This page isn’t here.');
+  expect(screen.getByRole('heading',{level:1})).toHaveTextContent(destination === '/blogs' ? 'All Blogs' : 'This page isn’t here.');
   expect(screen.getByRole('note')).toBeVisible();
 });
 

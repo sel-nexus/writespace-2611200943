@@ -8,6 +8,8 @@ import LandingPage from './pages/LandingPage.jsx';
 import { ProtectedRoute } from './components/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import Home from './pages/Home.jsx';
+import ReadBlog from './pages/ReadBlog.jsx';
 
 /**
  * Present a route's introduction in the shared editorial reading measure.
@@ -120,8 +122,8 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
-          <Route path="/blogs" element={<NotFound />} />
-          <Route path="/blog/:id" element={<NotFound />} />
+          <Route path="/blogs" element={<Home />} />
+          <Route path="/blog/:id" element={<ReadBlog />} />
           <Route path="/write" element={<NotFound />} />
           <Route path="/edit/:id" element={<NotFound />} />
         </Route>
