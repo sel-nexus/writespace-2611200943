@@ -11,6 +11,8 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import Home from './pages/Home.jsx';
 import ReadBlog from './pages/ReadBlog.jsx';
 import WriteBlog from './pages/WriteBlog.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import UserManagement from './pages/UserManagement.jsx';
 
 /**
  * Present a route's introduction in the shared editorial reading measure.
@@ -129,8 +131,8 @@ export default function App() {
           <Route path="/edit/:id" element={<WriteBlog />} />
         </Route>
         <Route element={<ProtectedRoute adminOnly />}>
-          <Route path="/admin" element={<NotFound />} />
-          <Route path="/users" element={<NotFound />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/users" element={<UserManagement />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Route>

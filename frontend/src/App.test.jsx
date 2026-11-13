@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { POSTS_KEY, SESSION_KEY } from './utils/storage.js';
+import { POSTS_KEY, SESSION_KEY, USERS_KEY } from './utils/storage.js';
 import { describe, expect, it, vi } from 'vitest';
 import App from './App.jsx';
 
@@ -123,7 +123,7 @@ it.each([
   localStorage.setItem(SESSION_KEY,JSON.stringify({userId:'u1',username:'mira',displayName:'Mira',role}));
   routeView(path);
   expect(screen.getByLabelText('Current address')).toHaveTextContent(destination);
-  expect(screen.getByRole('heading',{level:1})).toHaveTextContent(destination === '/blogs' ? 'All Blogs' : 'This page isn’t here.');
+  expect(screen.getByRole('heading',{level:1})).toHaveTextContent(destination === '/blogs' ? 'All Blogs' : destination === '/admin' ? 'Admin Dashboard' : 'Manage Users');
   expect(screen.getByRole('note')).toBeVisible();
 });
 
@@ -173,6 +173,25 @@ it.each(['user', 'admin'])('App integrates %s publishing, editing and cancellati
   await userEvent.type(screen.getByLabelText('Content'), ' discarded');
   await userEvent.click(screen.getByRole('link', { name: 'Cancel' }));
   expect(JSON.parse(localStorage.getItem(POSTS_KEY))).toEqual(saved);
+});
+
+/** Follow the actual admin quick link, create an account and retain the admin session. */
+it('App connects dashboard to account management and back without auto-login', async () => {
+  const session = { userId: 'admin-id', username: 'local-admin', displayName: 'Local admin', role: 'admin' };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  routeView('/admin');
+  await userEvent.click(screen.getByRole('link', { name: 'Manage Users', exact: true }));
+  expect(screen.getByLabelText('Current address').textContent).toBe('/users');
+  await userEvent.type(screen.getByLabelText('Display name', { exact: true }), 'New writer');
+  await userEvent.type(screen.getByLabelText('Username', { exact: true }), 'new-writer');
+  await userEvent.type(screen.getByLabelText('Password', { exact: true }), 'demo-only');
+  await userEvent.selectOptions(screen.getByLabelText('Role', { exact: true }), 'user');
+  await userEvent.click(screen.getByRole('button', { name: 'Create User' }));
+  expect(JSON.parse(localStorage.getItem(USERS_KEY))).toHaveLength(1);
+  expect(JSON.parse(localStorage.getItem(SESSION_KEY))).toEqual(session);
+  await userEvent.click(screen.getByRole('link', { name: 'Back to dashboard' }));
+  expect(screen.getByLabelText('Current address').textContent).toBe('/admin');
+  expect(screen.getByLabelText('Total Users')).toHaveTextContent('2');
 });
 
 it.each([
