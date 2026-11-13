@@ -31,13 +31,15 @@ describe('local-demo shell', () => {
     renderShell();
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'A space for your words.',
+      'Your thoughts. Your space. Beautifully simple.',
     );
     expect(screen.getByRole('note')).toHaveTextContent('not secure authentication');
-    expect(document.title).toBe('A space for your words. — WriteSpace browser-local demo');
+    expect(document.title).toBe('Your thoughts. Your space. Beautifully simple. — WriteSpace browser-local demo');
     expect(screen.getByRole('note')).toHaveTextContent('Do not use real passwords');
     expect(screen.getByText(/Keep a separate copy of writing/)).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getAllByRole('banner')).toHaveLength(1);
+    expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main-content');
   });
 
   /** Prove rendering preserves corrupt bytes and does not seed or rewrite storage. */
@@ -81,7 +83,7 @@ describe('local-demo shell', () => {
 
     await user.click(home);
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('A space for your words.');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Your thoughts. Your space. Beautifully simple.');
     expect(screen.queryByRole('link', { name: 'Return home' })).not.toBeInTheDocument();
   });
 
@@ -122,5 +124,29 @@ it.each([
   routeView(path);
   expect(screen.getByLabelText('Current address')).toHaveTextContent(destination);
   expect(screen.getByRole('heading',{level:1})).toHaveTextContent('This page isn’t here.');
+  expect(screen.getByRole('note')).toBeVisible();
+});
+
+/** Prove discovery actions traverse the real protected route groups. */
+it.each([
+  [null, 'Start Reading', '/login'], [null, 'Get Started Free', '/register'],
+  [null, 'All Blogs', '/login'], [null, 'preview', '/login'],
+  ['user', 'Start Reading', '/blogs'], ['admin', 'Start Reading', '/blogs'],
+  ['user', 'Get Started Free', '/blogs'], ['admin', 'Get Started Free', '/admin'],
+  ['user', 'Go to Dashboard', '/blogs'], ['admin', 'Go to Dashboard', '/admin'],
+  ['user', 'preview', '/blog/p1'], ['admin', 'preview', '/blog/p1'],
+  ['user', 'Login', '/blogs'], ['admin', 'Register', '/admin'],
+])('discovery %s activates %s through guards to %s', async (role, name, destination) => {
+  localStorage.setItem('writespace_posts', JSON.stringify([{ id: 'p1', title: 'preview', content: 'Local words',
+    createdAt: '2026-01-01', authorId: 'u1', authorName: 'Mira' }]));
+  if (role) localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: 'u1', username: 'mira', displayName: 'Mira', role }));
+  const before = { ...localStorage };
+  routeView('/');
+  expect(screen.getByLabelText('Current address').textContent).toBe('/');
+  await userEvent.click(screen.getByRole('link', { name, exact: true }));
+  expect(screen.getByLabelText('Current address').textContent).toBe(destination);
+  expect({ ...localStorage }).toEqual(before);
+  expect(screen.getAllByRole('banner')).toHaveLength(1);
+  expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
   expect(screen.getByRole('note')).toBeVisible();
 });

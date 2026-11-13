@@ -30,7 +30,7 @@ test('home explains the demo and preserves browser storage', async ({ page, cons
   });
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('A space for your words.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your thoughts. Your space. Beautifully simple.');
   await expect(page.getByRole('note')).toContainText('not secure authentication');
   await expect(page.getByRole('note')).toContainText('Do not use real passwords');
   expect(await page.evaluate(() => ({ ...localStorage }))).toEqual({
@@ -55,11 +55,11 @@ test('direct unmatched entry recovers home and supports back and forward', async
 
   await page.getByRole('link', { name: 'Return home' }).click();
   await expect(page).toHaveURL('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('A space for your words.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your thoughts. Your space. Beautifully simple.');
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('This page isn’t here.');
   await page.goForward();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('A space for your words.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your thoughts. Your space. Beautifully simple.');
   expect(consoleErrors).toEqual([]);
 });
 
@@ -71,7 +71,7 @@ test('home navigation and static asset policy work on production delivery', asyn
   await page.getByRole('link', { name: 'Home', exact: true }).click();
   await expect(page).toHaveURL('/');
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('A space for your words.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your thoughts. Your space. Beautifully simple.');
   const shell = await request.get('/');
   expect(shell.headers()['cache-control']).toBe('no-cache');
   const missing = await request.get('/assets/missing.js');

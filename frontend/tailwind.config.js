@@ -41,13 +41,17 @@ export default {
       transitionDuration: { quick: '150ms' },
       transitionTimingFunction: { calm: 'cubic-bezier(0.16, 1, 0.3, 1)' },
       keyframes: {
+        'preview-float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
         'hero-enter': {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
       },
-      // Opt in with motion-safe:animate-hero-enter; never loop or animate on reduced motion.
-      animation: { 'hero-enter': 'hero-enter 180ms ease-out both' },
+      // Decorative preview motion is explicitly requested; opt in only when motion is safe.
+      animation: { 'hero-enter': 'hero-enter 180ms ease-out both', 'preview-float': 'preview-float 6s ease-in-out infinite' },
     },
   },
   plugins: [],

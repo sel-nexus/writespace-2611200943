@@ -1,8 +1,10 @@
 /** Compose local authentication routes while preserving the informational demo shell. */
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
-import { Link, Outlet, Route, Routes } from 'react-router-dom';
+import { Link, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar.jsx';
+import { PublicNavbar } from './components/PublicNavbar.jsx';
+import LandingPage from './pages/LandingPage.jsx';
 import { ProtectedRoute } from './components/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
@@ -39,37 +41,13 @@ Introduction.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-/** Return the demo's useful introduction without offering unfinished features. */
-function DemoHome() {
-  return (
-    <Introduction title="A space for your words.">
-      <p>
-        Welcome to WriteSpace, a browser-local writing demo designed around
-        reading, writing, and keeping your ideas close at hand.
-      </p>
-      <p>
-        This introduction explains the demo’s boundaries. Nothing is created or
-        changed in your browser storage just by opening this page.
-      </p>
-      <h2 className="pt-6 font-editorial text-2xl text-foreground">
-        Before you use a local demo
-      </h2>
-      <p>
-        Browser-local data belongs to this browser and this site address.
-        It does not synchronize across devices, and clearing site data can
-        remove it. Keep a separate copy of writing you want to preserve.
-      </p>
-    </Introduction>
-  );
-}
-
 /** Return a clear unmatched-route explanation and a native home navigation link. */
 function NotFound() {
   return (
     <Introduction title="This page isn’t here.">
       <p>
         The address does not match a page in this demo. You can return to the
-        introduction without changing any local data.
+        home page without changing any local data.
       </p>
       <Link
         to="/"
@@ -84,28 +62,29 @@ function NotFound() {
   );
 }
 
-/** Wrap nested route content in the unchanged warning, navigation and footer. */
+/** Share the demo warning and skip target without duplicating landing chrome. */
 function Layout() {
+  const landing = useLocation().pathname === '/';
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       <a
         href="#main-content"
         className="sr-only rounded-control bg-surface px-4 py-3 text-primary-700
-          focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10
+          focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30
           focus:outline-none focus:ring-2 focus:ring-ring"
       >
         Skip to content
       </a>
-      <Navbar />
+      {landing ? <PublicNavbar /> : <Navbar />}
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto max-w-shell px-6 pb-section pt-8 sm:px-10"
+        className={landing ? '' : 'mx-auto max-w-shell px-6 pb-section pt-8 sm:px-10'}
       >
         <aside
           role="note"
           aria-labelledby="demo-warning"
-          className="max-w-reading rounded-control border border-border
+          className="mx-auto max-w-reading rounded-control border border-border
             bg-warning-background p-5 text-sm leading-relaxed text-warning-foreground"
         >
           <h2 id="demo-warning" className="font-semibold">
@@ -119,11 +98,13 @@ function Layout() {
         </aside>
         <Outlet />
       </main>
-      <footer className="border-t border-border">
-        <p className="mx-auto max-w-shell px-6 py-6 text-sm text-foreground-muted sm:px-10">
-          WriteSpace · Local to your browser. No cross-device synchronization.
-        </p>
-      </footer>
+      {!landing && (
+        <footer className="border-t border-border">
+          <p className="mx-auto max-w-shell px-6 py-6 text-sm text-foreground-muted sm:px-10">
+            WriteSpace · Local to your browser. No cross-device synchronization.
+          </p>
+        </footer>
+      )}
     </div>
   );
 }
@@ -133,7 +114,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<DemoHome />} />
+        <Route path="/" element={<LandingPage />} />
         <Route element={<ProtectedRoute guestOnly />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

@@ -17,7 +17,7 @@ async function signOut(page, name) {
 test('register, logout, invalid login and login persist a real local identity', async ({ page, consoleErrors }) => {
   await page.goto('/');
   await openNavigation(page);
-  await page.getByRole('navigation').getByRole('link', { name: 'Register', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Public navigation' }).getByRole('link', { name: 'Get Started', exact: true }).click();
   await page.getByLabel('Display name', { exact: true }).fill(' Mira ');
   await page.getByLabel('Username', { exact: true }).fill(' mira ');
   await page.getByLabel('Password', { exact: true }).fill(' demo-only ');
