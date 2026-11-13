@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { SESSION_KEY } from './utils/storage.js';
+import { POSTS_KEY, SESSION_KEY } from './utils/storage.js';
 import { describe, expect, it, vi } from 'vitest';
 import App from './App.jsx';
 
@@ -149,4 +149,39 @@ it.each([
   expect(screen.getAllByRole('banner')).toHaveLength(1);
   expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
   expect(screen.getByRole('note')).toBeVisible();
+});
+
+/** Exercise write and edit routes through the real guard, reader and shared warning. */
+it.each(['user', 'admin'])('App integrates %s publishing, editing and cancellation', async (role) => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: 'u1', username: 'mira', displayName: 'Mira', role }));
+  routeView('/write');
+  expect(screen.getByRole('heading', { name: 'Write a Blog' })).toBeVisible();
+  expect(screen.getByRole('note')).toHaveTextContent('Do not use real passwords');
+  await userEvent.type(screen.getByLabelText('Title'), 'New writing');
+  await userEvent.type(screen.getByLabelText('Content'), 'Local content');
+  await userEvent.click(screen.getByRole('button', { name: 'Publish Blog' }));
+  const [post] = JSON.parse(localStorage.getItem(POSTS_KEY));
+  expect(screen.getByLabelText('Current address').textContent).toBe('/blog/' + post.id);
+  expect(screen.getByLabelText('Post content')).toHaveTextContent('Local content');
+  await userEvent.click(screen.getByRole('link', { name: 'Edit', exact: true }));
+  expect(screen.getByLabelText('Title')).toHaveValue('New writing');
+  await userEvent.type(screen.getByLabelText('Content'), ' unsaved');
+  await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+  expect(screen.getByLabelText('Post content')).toHaveTextContent('Local content unsaved');
+  const saved = JSON.parse(localStorage.getItem(POSTS_KEY));
+  await userEvent.click(screen.getByRole('link', { name: 'Edit', exact: true }));
+  await userEvent.type(screen.getByLabelText('Content'), ' discarded');
+  await userEvent.click(screen.getByRole('link', { name: 'Cancel' }));
+  expect(JSON.parse(localStorage.getItem(POSTS_KEY))).toEqual(saved);
+});
+
+it.each([
+  ['p1', '/blogs', 'All Blogs'],
+  ['missing', '/edit/missing', 'Post not found'],
+])('App direct edit %s resolves safely to %s', (id, destination, heading) => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: 'other', username: 'other', displayName: 'Other', role: 'user' }));
+  localStorage.setItem(POSTS_KEY, JSON.stringify([{ id: 'p1', title: 'Owned', content: 'Words', createdAt: '2026-01-01', authorId: 'u1', authorName: 'Mira' }]));
+  routeView('/edit/' + id);
+  expect(screen.getByLabelText('Current address').textContent).toBe(destination);
+  expect(screen.getByRole('heading', { name: heading })).toBeVisible();
 });
