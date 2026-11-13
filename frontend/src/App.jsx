@@ -1,7 +1,11 @@
-/** Render an informational shell without reading or mutating browser storage. */
+/** Compose local authentication routes while preserving the informational demo shell. */
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, Outlet, Route, Routes } from 'react-router-dom';
+import { Navbar } from './components/Navbar.jsx';
+import { ProtectedRoute } from './components/ProtectedRoute.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
 
 /**
  * Present a route's introduction in the shared editorial reading measure.
@@ -80,8 +84,8 @@ function NotFound() {
   );
 }
 
-/** Return the shared warning and the shell's single route table. */
-export default function App() {
+/** Wrap nested route content in the unchanged warning, navigation and footer. */
+function Layout() {
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       <a
@@ -92,29 +96,7 @@ export default function App() {
       >
         Skip to content
       </a>
-      <header className="border-b border-border">
-        <nav
-          aria-label="Main navigation"
-          className="mx-auto flex max-w-shell items-center justify-between gap-6 px-6 py-5 sm:px-10"
-        >
-          <Link
-            to="/"
-            className="inline-flex min-h-11 items-center font-editorial text-2xl
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            WriteSpace
-          </Link>
-          <NavLink
-            to="/"
-            end
-            className="inline-flex min-h-11 items-center text-sm font-medium
-              text-foreground-muted hover:text-primary-700 focus-visible:outline-none
-              focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Home
-          </NavLink>
-        </nav>
-      </header>
+      <Navbar />
       <main
         id="main-content"
         tabIndex={-1}
@@ -135,10 +117,7 @@ export default function App() {
             sensitive information, or your only copy of important writing.
           </p>
         </aside>
-        <Routes>
-          <Route path="/" element={<DemoHome />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Outlet />
       </main>
       <footer className="border-t border-border">
         <p className="mx-auto max-w-shell px-6 py-6 text-sm text-foreground-muted sm:px-10">
@@ -146,5 +125,31 @@ export default function App() {
         </p>
       </footer>
     </div>
+  );
+}
+
+/** Declare guard groups without inventing pages belonging to later feature slices. */
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<DemoHome />} />
+        <Route element={<ProtectedRoute guestOnly />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
+        <Route element={<ProtectedRoute />}>
+          <Route path="/blogs" element={<NotFound />} />
+          <Route path="/blog/:id" element={<NotFound />} />
+          <Route path="/write" element={<NotFound />} />
+          <Route path="/edit/:id" element={<NotFound />} />
+        </Route>
+        <Route element={<ProtectedRoute adminOnly />}>
+          <Route path="/admin" element={<NotFound />} />
+          <Route path="/users" element={<NotFound />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
   );
 }

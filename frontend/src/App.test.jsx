@@ -2,7 +2,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { SESSION_KEY } from './utils/storage.js';
 import { describe, expect, it, vi } from 'vitest';
 import App from './App.jsx';
 
@@ -91,4 +92,35 @@ describe('local-demo shell', () => {
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
   });
+});
+
+/** Expose current address to prove actual App redirects rather than fallback text alone. */
+function Address() {
+  return <output aria-label="Current address">{useLocation().pathname}</output>;
+}
+/** Render App routing with a visible test-only address observer. */
+function routeView(path) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Address />
+      <App />
+    </MemoryRouter>,
+  );
+}
+it.each(['/blogs','/blog/test','/write','/edit/test','/admin','/users'])('App denies guest direct route %s',path=>{
+  routeView(path);
+  expect(screen.getByLabelText('Current address')).toHaveTextContent('/login');
+  expect(screen.getByRole('heading',{name:'Log in',exact:true})).toBeVisible();
+  expect(screen.getByRole('note')).toHaveTextContent('Do not use real passwords');
+});
+it.each([
+  ['user','/login','/blogs'],['user','/register','/blogs'],['admin','/login','/admin'],['admin','/register','/admin'],
+  ['user','/admin','/blogs'],['user','/users','/blogs'],['admin','/admin','/admin'],['admin','/users','/users'],
+  ['user','/blogs','/blogs'],['admin','/blogs','/blogs'],
+])('App resolves %s at %s to %s without fake future pages',(role,path,destination)=>{
+  localStorage.setItem(SESSION_KEY,JSON.stringify({userId:'u1',username:'mira',displayName:'Mira',role}));
+  routeView(path);
+  expect(screen.getByLabelText('Current address')).toHaveTextContent(destination);
+  expect(screen.getByRole('heading',{level:1})).toHaveTextContent('This page isn’t here.');
+  expect(screen.getByRole('note')).toBeVisible();
 });

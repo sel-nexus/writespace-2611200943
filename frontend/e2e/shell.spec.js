@@ -66,6 +66,8 @@ test('direct unmatched entry recovers home and supports back and forward', async
 /** Prove the home navigation works from a direct entry and missing assets are not HTML. */
 test('home navigation and static asset policy work on production delivery', async ({ page, request, consoleErrors }) => {
   await page.goto('/another-unmatched-entry');
+  const toggle = page.getByRole('button', { name: 'Toggle navigation' });
+  if (await toggle.isVisible()) await toggle.click();
   await page.getByRole('link', { name: 'Home', exact: true }).click();
   await expect(page).toHaveURL('/');
   await page.reload();
