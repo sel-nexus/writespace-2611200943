@@ -7,7 +7,7 @@ import { allAccounts } from '../utils/users.js';
 import { deletePost } from '../utils/posts.js';
 import { newestFirst, formatDate } from '../utils/presentation.js';
 
-const control = 'inline-flex min-h-11 items-center rounded-control border border-border px-5 py-3 text-sm hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring';
+const control = 'inline-flex min-h-11 items-center rounded-control border border-border px-5 py-3 text-sm hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring dark:border-slate-700 dark:hover:bg-slate-800 dark:focus-visible:ring-indigo-300';
 /** Show valid zeros separately from unavailable data, with activated management links. */
 export default function AdminDashboard() {
   const [posts, setPosts] = useState(readPosts);
@@ -37,17 +37,17 @@ export default function AdminDashboard() {
     navigate('/blogs');
   }
   return (
-    <section className="py-section">
+    <section className="py-section text-foreground dark:bg-slate-900 dark:text-slate-100">
       <h1 className="font-editorial text-headline">Admin Dashboard</h1>
-      <p className="mt-4 text-foreground-muted">An overview of writing and accounts in this browser.</p>
+      <p className="mt-4 text-foreground-muted dark:text-slate-300">An overview of writing and accounts in this browser.</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Posts" value={posts.ok ? posts.value.length : null} />
         <StatCard label="Total Users" value={users.ok ? accounts.length : null} />
         <StatCard label="Total Admins" value={users.ok ? accounts.filter((user) => user.role === 'admin').length : null} />
         <StatCard label="Total Registered Users" value={users.ok ? accounts.filter((user) => user.role === 'user').length : null} />
       </div>
-      {!posts.ok && <p role="alert" className="mt-4 text-error-foreground">Posts unavailable: {posts.status}. {posts.message}</p>}
-      {!users.ok && <p role="alert" className="mt-4 text-error-foreground">Accounts unavailable: {users.status}. {users.message}</p>}
+      {!posts.ok && <p role="alert" className="mt-4 text-error-foreground dark:text-red-300">Posts unavailable: {posts.status}. {posts.message}</p>}
+      {!users.ok && <p role="alert" className="mt-4 text-error-foreground dark:text-red-300">Accounts unavailable: {users.status}. {users.message}</p>}
       {(!posts.ok || !users.ok) && (
         <button type="button" className={control + ' mt-4'} onClick={() => { setPosts(readPosts()); setUsers(readUsers()); }}>Retry loading data</button>
       )}
@@ -57,18 +57,18 @@ export default function AdminDashboard() {
       </nav>
       <section aria-labelledby="recent-posts" className="mt-12">
         <h2 id="recent-posts" className="font-editorial text-3xl">Recent Posts</h2>
-        {posts.ok && recent.length === 0 && <p role="status" className="mt-4 text-foreground-muted">No posts yet.</p>}
-        <ul className="mt-6 divide-y divide-border">
+        {posts.ok && recent.length === 0 && <p role="status" className="mt-4 text-foreground-muted dark:text-slate-300">No posts yet.</p>}
+        <ul className="mt-6 divide-y divide-border dark:divide-slate-700">
           {recent.map((post) => (
             <li key={post.id} className="flex flex-wrap items-center justify-between gap-4 py-5">
               <div className="min-w-0 break-words">
                 <Link
                   to={'/blog/' + encodeURIComponent(post.id)}
-                  className="text-lg font-medium underline focus-visible:ring-2 focus-visible:ring-ring"
+                  className="text-lg font-medium underline focus-visible:ring-2 focus-visible:ring-ring dark:focus-visible:ring-indigo-300"
                 >
                   {post.title}
                 </Link>
-                <p className="mt-2 text-sm text-foreground-muted">{post.authorName} · {formatDate(post.createdAt)}</p>
+                <p className="mt-2 text-sm text-foreground-muted dark:text-slate-300">{post.authorName} · {formatDate(post.createdAt)}</p>
               </div>
               {session?.role === 'admin' && (
                 <div className="flex gap-3">
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     aria-label={'Delete ' + post.title}
-                    className={control + ' text-error-foreground'}
+                    className={control + ' text-error-foreground dark:text-red-300'}
                     onClick={() => removePost(post.id)}
                   >
                     Delete
@@ -87,8 +87,8 @@ export default function AdminDashboard() {
           ))}
         </ul>
       </section>
-      {error && <p role="alert" className="mt-4 text-error-foreground">{error}</p>}
-      <p className="mt-8 text-sm text-foreground-muted">
+      {error && <p role="alert" className="mt-4 text-error-foreground dark:text-red-300">{error}</p>}
+      <p className="mt-8 text-sm text-foreground-muted dark:text-slate-300">
         Other tabs refresh this view. Concurrent changes are not transactional; the last write can overwrite another tab’s changes.
       </p>
     </section>
