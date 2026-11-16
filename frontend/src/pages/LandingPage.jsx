@@ -27,7 +27,11 @@ export default function LandingPage() {
   const previews = posts.ok ? newestFirst(posts.value).slice(0, 3) : [];
   return (
     <>
-      <section aria-labelledby="landing-title" className="flex min-h-screen items-center bg-gradient-to-br from-surface-raised via-background to-primary-50 text-foreground dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950 dark:text-slate-100">
+      <section
+        aria-labelledby="landing-title"
+        className="flex min-h-screen items-center bg-gradient-to-br from-surface-raised via-background
+          to-primary-50 text-foreground dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950 dark:text-slate-100"
+      >
         <div className="mx-auto grid w-full max-w-shell items-center gap-16 px-6 py-section sm:px-10 lg:grid-cols-2">
           <div>
             <p className="mb-6 text-sm font-medium tracking-wide text-foreground-muted dark:text-slate-300">
@@ -40,15 +44,27 @@ export default function LandingPage() {
               Welcome to WriteSpace. Make room for the stories and ideas only you can write.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className={control + ' bg-primary-700 text-white hover:bg-primary-800 dark:bg-indigo-700 dark:text-white dark:hover:bg-indigo-600'}>
+              <Link
+                to="/register"
+                className={control + ' bg-primary-700 text-white hover:bg-primary-800 ' +
+                  'dark:bg-indigo-700 dark:text-white dark:hover:bg-indigo-600'}
+              >
                 Get Started Free
               </Link>
-              <Link to={session ? '/blogs' : '/login'} className={control + ' border border-border bg-surface text-foreground hover:bg-surface-raised dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'}>
+              <Link
+                to={session ? '/blogs' : '/login'}
+                className={control + ' border border-border bg-surface text-foreground hover:bg-surface-raised ' +
+                  'dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'}
+              >
                 Start Reading
               </Link>
             </div>
           </div>
-          <div aria-label="Writing preview illustration" className="rounded-control border border-border bg-surface p-8 dark:border-slate-700 dark:bg-slate-900 motion-safe:animate-preview-float">
+          <div
+            aria-label="Writing preview illustration"
+            className="rounded-control border border-border bg-surface p-8 dark:border-slate-700
+              dark:bg-slate-900 motion-safe:animate-preview-float"
+          >
             <p className="text-sm text-foreground-muted dark:text-slate-300">
               A little room to think
             </p>
@@ -95,15 +111,23 @@ export default function LandingPage() {
           The newest posts saved in this browser.
         </p>
         {!posts.ok ? (
-          <div role="alert" className="mt-8 rounded-control border border-border bg-surface p-6 dark:border-slate-700 dark:bg-slate-900 text-error-foreground dark:text-red-300">
+          <div
+            role="alert"
+            className="mt-8 rounded-control border border-border bg-surface p-6 dark:border-slate-700 dark:bg-slate-900 text-error-foreground dark:text-red-300"
+          >
             <p>
               {posts.status === 'corrupt' ? 'Saved posts cannot be read because local data is corrupt.' : 'Posts are unavailable because browser storage cannot be read.'} No changes were made.
             </p>
             <p className="mt-3">
               Check browser storage access or restore a saved copy. Do not clear site data unless you intend to lose it.
             </p>
-            <button type="button" className={control + ' mt-4 border border-border text-foreground hover:bg-surface-raised dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800'} onClick={() =>
-               setPosts(readPosts())}>Retry loading posts
+            <button
+              type="button"
+              className={control + ' mt-4 border border-border text-foreground hover:bg-surface-raised ' +
+                'dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800'}
+              onClick={() => setPosts(readPosts())}
+            >
+              Retry loading posts
             </button>
           </div>
         ) : previews.length === 0 ? (

@@ -35,6 +35,7 @@ test('home explains the demo and preserves browser storage', async ({ page, cons
   await expect(page.getByRole('note')).toContainText('Do not use real passwords');
   expect(await page.evaluate(() => ({ ...localStorage }))).toEqual({
     'shell-check': '{corrupt bytes preserved',
+    writespace_theme: 'light',
   });
   expect(await page.evaluate(() => ({ ...sessionStorage }))).toEqual({
     'shell-session-check': 'keep this',

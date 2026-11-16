@@ -80,10 +80,20 @@ export default function UserManagement() {
                   aria-invalid={Boolean(errors[field])} aria-describedby={errors[field] ? field + '-error' : undefined}
                   className={control + ' w-full bg-surface text-foreground dark:bg-slate-800 dark:text-slate-100'} onChange={(event) => setForm({ ...form, [field]: event.target.value })} />
               )}
-              {errors[field] && <p id={field + '-error'} role="alert" className="mt-2 text-sm text-error-foreground dark:text-red-300">{errors[field]}</p>}
+              {errors[field] && (
+                <p id={field + '-error'} role="alert" className="mt-2 text-sm text-error-foreground dark:text-red-300">
+                  {errors[field]}
+                </p>
+              )}
             </div>
           ))}
-          <button type="submit" className={control + ' bg-primary-700 text-white hover:bg-primary-800 dark:border-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 sm:col-span-2'}>Create User</button>
+          <button
+            type="submit"
+            className={control + ' bg-primary-700 text-white hover:bg-primary-800 ' +
+              'dark:border-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 sm:col-span-2'}
+          >
+            Create User
+          </button>
         </form>
       </section>
       {error && <p role="alert" className="mt-4 text-error-foreground dark:text-red-300">{error}</p>}

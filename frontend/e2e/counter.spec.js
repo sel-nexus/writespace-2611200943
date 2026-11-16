@@ -22,7 +22,10 @@ test('counts create and edit input while cancel discards and save preserves writ
   await expect(page).toHaveURL('/blogs');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('writespace_posts')))).toEqual([]);
 
-  await page.goto('/write');
+  const toggle = page.getByRole('button', { name: 'Toggle navigation' });
+  if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+  await page.getByRole('link', { name: 'Write', exact: true }).click();
+  await expect(page).toHaveURL('/write');
   await expect(count).toHaveText('0 characters');
   await page.getByLabel('Title', { exact: true }).fill('Counter journey');
   await content.fill('Hello');

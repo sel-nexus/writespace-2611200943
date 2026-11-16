@@ -115,7 +115,7 @@ export function Navbar({ theme = 'light', onToggle = () => {} }) {
         </div>
       </nav>
       {error && (
-        <p role="alert" className="mx-auto max-w-shell px-6 pb-4 text-sm text-error-foreground">
+        <p role="alert" className="mx-auto max-w-shell px-6 pb-4 text-sm text-error-foreground dark:text-red-300">
           {error}
         </p>
       )}

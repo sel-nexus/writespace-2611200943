@@ -119,7 +119,13 @@ function Editor({ id }) {
                 {result.errors.content}
               </p>
             )}
-            <p id="content-count" role="status" aria-live="polite" aria-atomic="true" className="mt-2 text-sm tabular-nums text-foreground-muted dark:text-slate-300">
+            <p
+              id="content-count"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="mt-2 text-sm tabular-nums text-foreground-muted dark:text-slate-300"
+            >
               {form.content.length} characters
             </p>
           </div>

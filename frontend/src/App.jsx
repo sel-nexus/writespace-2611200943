@@ -34,7 +34,7 @@ function Introduction({ title, children }) {
       <h1 id="page-title" className="font-editorial text-headline">
         {title}
       </h1>
-      <div className="mt-6 space-y-6 text-reading text-foreground-muted">
+      <div className="mt-6 space-y-6 text-reading text-foreground-muted dark:text-slate-300">
         {children}
       </div>
     </section>
@@ -71,7 +71,7 @@ function NotFound() {
 function Layout({ theme, onToggle, themeSaveFailed }) {
   const landing = useLocation().pathname === '/';
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
+    <div className="min-h-screen bg-background font-sans text-foreground dark:bg-slate-950 dark:text-slate-100">
       <a
         href="#main-content"
         className="sr-only rounded-control bg-surface px-4 py-3 text-primary-700
@@ -82,7 +82,7 @@ function Layout({ theme, onToggle, themeSaveFailed }) {
       </a>
       {landing ? <PublicNavbar theme={theme} onToggle={onToggle} /> : <Navbar theme={theme} onToggle={onToggle} />}
       {themeSaveFailed && (
-        <p role="alert" className="mx-auto max-w-shell px-6 py-3 text-sm text-error-foreground">
+        <p role="alert" className="mx-auto max-w-shell px-6 py-3 text-sm text-error-foreground dark:text-red-300">
           Theme applies in this tab but may not persist. Check browser storage and try again.
         </p>
       )}
@@ -111,7 +111,7 @@ function Layout({ theme, onToggle, themeSaveFailed }) {
       </main>
       {!landing && (
         <footer className="border-t border-border">
-          <p className="mx-auto max-w-shell px-6 py-6 text-sm text-foreground-muted sm:px-10">
+          <p className="mx-auto max-w-shell px-6 py-6 text-sm text-foreground-muted dark:text-slate-300 sm:px-10">
             WriteSpace · Local to your browser. No cross-device synchronization.
           </p>
         </footer>
