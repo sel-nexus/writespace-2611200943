@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { expect, it, vi } from 'vitest';
 import ReadBlog from './ReadBlog.jsx';
+import Home from './Home.jsx';
 import { POSTS_KEY, SESSION_KEY, readPosts } from '../utils/storage.js';
 
 const session = { userId: 'u1', username: 'mira', displayName: 'Mira', role: 'user' };
@@ -131,4 +132,34 @@ it('activates the edit link without changing storage', async () => {
   await userEvent.click(screen.getByRole('link', { name: 'Edit' }));
   expect(screen.getByLabelText('Address').textContent).toBe('/edit/p1');
   expect(readPosts().value).toEqual([post]);
+});
+
+it('pairs reader text, metadata, actions and storage errors with dark styles', () => {
+  view();
+  expect(screen.getByLabelText('Post content').closest('section')).toHaveClass('dark:bg-slate-900', 'dark:text-slate-100');
+  expect(screen.getByText(/Mira ·/)).toHaveClass('text-foreground-muted', 'dark:text-slate-300');
+  expect(screen.getByRole('link', { name: 'Edit' })).toHaveClass('dark:border-slate-600', 'dark:hover:bg-slate-700');
+  expect(screen.getByRole('button', { name: 'Delete' })).toHaveClass('text-error-foreground', 'dark:text-red-300');
+  localStorage.setItem(POSTS_KEY, '{bad');
+  act(() => window.dispatchEvent(new StorageEvent('storage', { key: POSTS_KEY })));
+  expect(screen.getByRole('alert')).toHaveClass('text-error-foreground', 'dark:text-red-300');
+});
+
+it('pairs feed cards, empty and error states with dark styles', () => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  localStorage.setItem(POSTS_KEY, JSON.stringify([post]));
+  render(<MemoryRouter><Home /></MemoryRouter>);
+  const section = screen.getByRole('heading', { name: 'All Blogs' }).closest('section');
+  expect(section).toHaveClass('dark:bg-slate-900', 'dark:text-slate-100');
+  const card = screen.getByRole('article');
+  expect(card).toHaveClass('bg-surface', 'dark:bg-slate-800', 'dark:border-slate-700', 'dark:text-slate-100', 'dark:border-t-indigo-300');
+  expect(screen.getByText('Mira').parentElement).toHaveClass('dark:text-slate-300');
+  expect(screen.getByRole('link', { name: 'Edit' })).toHaveClass('dark:hover:bg-slate-700');
+  localStorage.setItem(POSTS_KEY, '[]');
+  act(() => window.dispatchEvent(new StorageEvent('storage', { key: POSTS_KEY })));
+  expect(screen.getByRole('status')).toHaveTextContent('No posts yet');
+  expect(screen.getByRole('link', { name: 'Write your first post' })).toHaveClass('dark:border-slate-600', 'dark:hover:bg-slate-700');
+  localStorage.setItem(POSTS_KEY, '{bad');
+  act(() => window.dispatchEvent(new StorageEvent('storage', { key: POSTS_KEY })));
+  expect(screen.getByRole('alert')).toHaveClass('dark:border-slate-700', 'dark:text-red-300');
 });

@@ -10,6 +10,10 @@ Data is scoped to the browser profile and exact origin (scheme, host and port). 
 
 The application distinguishes missing storage from corrupt or unavailable collections. Missing keys are treated as empty; unreadable data blocks changes rather than being overwritten. Failed saves retain form input where possible. If registration saves an account but cannot save its session, sign in later after restoring storage; do not repeatedly register the same username. Clearing site data is destructive.
 
+## Appearance and editor
+
+Use the navigation theme control to switch between light and dark. The preference is saved locally as `writespace_theme` and remains after logout; if browser storage rejects the write, the selection applies only to the current tab and a warning is displayed. Missing or invalid preferences default to light. The editor displays the current content length in JavaScript UTF-16 code units; it does not limit or store the count.
+
 ## Local development
 
 Requires Node.js 20 or later and npm. The application lives in `frontend/`.

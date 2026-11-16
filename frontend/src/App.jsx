@@ -1,6 +1,6 @@
 /** Compose local authentication routes while preserving the informational demo shell. */
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar.jsx';
 import { PublicNavbar } from './components/PublicNavbar.jsx';
@@ -34,7 +34,7 @@ function Introduction({ title, children }) {
       <h1 id="page-title" className="font-editorial text-headline">
         {title}
       </h1>
-      <div className="mt-6 space-y-6 text-reading text-foreground-muted">
+      <div className="mt-6 space-y-6 text-reading text-foreground-muted dark:text-slate-300">
         {children}
       </div>
     </section>
@@ -68,10 +68,10 @@ function NotFound() {
 }
 
 /** Share the demo warning and skip target without duplicating landing chrome. */
-function Layout() {
+function Layout({ theme, onToggle, themeSaveFailed }) {
   const landing = useLocation().pathname === '/';
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
+    <div className="min-h-screen bg-background font-sans text-foreground dark:bg-slate-950 dark:text-slate-100">
       <a
         href="#main-content"
         className="sr-only rounded-control bg-surface px-4 py-3 text-primary-700
@@ -80,7 +80,12 @@ function Layout() {
       >
         Skip to content
       </a>
-      {landing ? <PublicNavbar /> : <Navbar />}
+      {landing ? <PublicNavbar theme={theme} onToggle={onToggle} /> : <Navbar theme={theme} onToggle={onToggle} />}
+      {themeSaveFailed && (
+        <p role="alert" className="mx-auto max-w-shell px-6 py-3 text-sm text-error-foreground dark:text-red-300">
+          Theme applies in this tab but may not persist. Check browser storage and try again.
+        </p>
+      )}
       <main
         id="main-content"
         tabIndex={-1}
@@ -90,7 +95,8 @@ function Layout() {
           role="note"
           aria-labelledby="demo-warning"
           className="mx-auto max-w-reading rounded-control border border-border
-            bg-warning-background p-5 text-sm leading-relaxed text-warning-foreground"
+            bg-warning-background p-5 text-sm leading-relaxed text-warning-foreground
+            dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
         >
           <h2 id="demo-warning" className="font-semibold">
             Browser-local demo — not secure authentication
@@ -105,7 +111,7 @@ function Layout() {
       </main>
       {!landing && (
         <footer className="border-t border-border">
-          <p className="mx-auto max-w-shell px-6 py-6 text-sm text-foreground-muted sm:px-10">
+          <p className="mx-auto max-w-shell px-6 py-6 text-sm text-foreground-muted dark:text-slate-300 sm:px-10">
             WriteSpace · Local to your browser. No cross-device synchronization.
           </p>
         </footer>
@@ -114,11 +120,42 @@ function Layout() {
   );
 }
 
+Layout.propTypes = {
+  theme: PropTypes.oneOf(['light', 'dark']).isRequired,
+  onToggle: PropTypes.func.isRequired,
+  themeSaveFailed: PropTypes.bool.isRequired,
+};
+
 /** Declare guard groups without inventing pages belonging to later feature slices. */
 export default function App() {
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('writespace_theme');
+      return saved === 'light' || saved === 'dark' ? saved : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+  const [themeSaveFailed, setThemeSaveFailed] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      window.localStorage.setItem('writespace_theme', theme);
+      setThemeSaveFailed(false);
+    } catch {
+      setThemeSaveFailed(true);
+    }
+  }, [theme]);
+
+  /** Change appearance without affecting authentication or other stored data. */
+  function toggleTheme() {
+    setTheme((previous) => previous === 'light' ? 'dark' : 'light');
+  }
+
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route element={<Layout theme={theme} onToggle={toggleTheme} themeSaveFailed={themeSaveFailed} />}>
         <Route path="/" element={<LandingPage />} />
         <Route element={<ProtectedRoute guestOnly />}>
           <Route path="/login" element={<LoginPage />} />

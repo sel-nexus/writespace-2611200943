@@ -73,6 +73,68 @@ it('render, rerender and input never write, remove, confirm or navigate; counter
   expect(localStorage.getItem(POSTS_KEY)).toBeNull();
 });
 
+it('counts UTF-16 code units after typing, deletion, paste and clearing', async () => {
+  const user = userEvent.setup();
+  view('/write', null);
+  const content = screen.getByLabelText('Content');
+  const count = screen.getByText(/^\d+ characters$/);
+  expect(content).toHaveValue('');
+  expect(content).not.toHaveAttribute('maxlength');
+  expect(content).toHaveAccessibleDescription('0 characters');
+  expect(count).toHaveTextContent(/^0 characters$/);
+  await user.type(content, 'ab');
+  expect(count).toHaveTextContent(/^2 characters$/);
+  await user.keyboard('{Backspace}');
+  expect(content).toHaveValue('a');
+  expect(count).toHaveTextContent(/^1 characters$/);
+  await user.paste('😀\nZ');
+  expect(content).toHaveValue('a😀\nZ');
+  expect(count).toHaveTextContent(/^5 characters$/);
+  await user.clear(content);
+  expect(count).toHaveTextContent(/^0 characters$/);
+  expect(localStorage.getItem(POSTS_KEY)).toBeNull();
+});
+
+it('keeps whitespace validation and its error association alongside the counter', async () => {
+  view('/write', null);
+  fill('Valid', ' \n ');
+  expect(screen.getByText(/^\d+ characters$/)).toHaveTextContent(/^3 characters$/);
+  await save();
+  const content = screen.getByLabelText('Content');
+  expect(content).toHaveAttribute('aria-invalid', 'true');
+  expect(content).toHaveAccessibleDescription('This field is required. 3 characters');
+  expect(content).toHaveValue(' \n ');
+  expect(localStorage.getItem(POSTS_KEY)).toBeNull();
+  expect(screen.getByLabelText('Address')).toHaveTextContent('/write');
+});
+
+it('saves a long create value without truncation or an extra count field', async () => {
+  view('/write', null);
+  const text = ' 😀 long line\n'.repeat(5000);
+  fill('Long title', text);
+  expect(screen.getByLabelText('Content')).toHaveValue(text);
+  expect(screen.getByText(/^\d+ characters$/).textContent.trim()).toBe(`${text.length} characters`);
+  await save();
+  const [post] = JSON.parse(localStorage.getItem(POSTS_KEY));
+  expect(Object.keys(post).sort()).toEqual(['authorId', 'authorName', 'content', 'createdAt', 'id', 'title']);
+  expect(post).toMatchObject({ title: 'Long title', content: text, authorId: owner.userId, authorName: owner.displayName });
+  expect(screen.getByLabelText('Address').textContent).toBe('/blog/' + post.id);
+});
+
+it('counts prefilled edit content and preserves the exact updated record on save', async () => {
+  const initial = { ...original, content: '😀\n original ' };
+  view('/edit/p1', [initial]);
+  const content = screen.getByLabelText('Content');
+  expect(content).toHaveValue(initial.content);
+  expect(screen.getByText(/^\d+ characters$/).textContent.trim()).toBe(`${initial.content.length} characters`);
+  const revised = `${initial.content}more 😀`;
+  fireEvent.change(content, { target: { value: revised } });
+  expect(screen.getByText(/^\d+ characters$/).textContent.trim()).toBe(`${revised.length} characters`);
+  await save();
+  expect(JSON.parse(localStorage.getItem(POSTS_KEY))).toEqual([{ ...initial, content: revised }]);
+  expect(screen.getByLabelText('Address')).toHaveTextContent('/blog/p1');
+});
+
 it('associates both required field errors and corrects each independently without writes', async () => {
   view();
   fill('  ', '\n ');
@@ -268,4 +330,19 @@ it('quota failure can retry the retained edit once storage works', async () => {
   await save();
   expect(screen.getByLabelText('Address').textContent).toBe('/blog/p1');
   expect(JSON.parse(localStorage.getItem(POSTS_KEY))[0]).toEqual({ ...original, title: 'Draft title', content: ' Draft\n  content ' });
+});
+
+it('pairs editor fields, controls and validation errors with dark styles', async () => {
+  view('/write', null);
+  expect(screen.getByRole('heading', { name: 'Write a Blog' }).closest('section')).toHaveClass('dark:bg-slate-900', 'dark:text-slate-100');
+  for (const name of ['Title', 'Content']) {
+    expect(screen.getByLabelText(name)).toHaveClass('bg-surface', 'dark:bg-slate-800', 'dark:text-slate-100', 'dark:border-slate-600', 'dark:focus:ring-indigo-300');
+  }
+  expect(screen.getByRole('link', { name: 'Cancel' })).toHaveClass('dark:hover:bg-slate-700');
+  expect(screen.getByRole('button', { name: 'Publish Blog' })).toHaveClass('dark:bg-indigo-700', 'dark:focus-visible:ring-offset-slate-900');
+  await save();
+  for (const error of screen.getAllByText('This field is required.')) {
+    expect(error).toHaveClass('text-error-foreground', 'dark:text-red-300');
+  }
+  expect(localStorage.getItem(POSTS_KEY)).toBeNull();
 });

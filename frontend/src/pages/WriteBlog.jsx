@@ -5,8 +5,8 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { readPosts, readSession, POSTS_KEY, SESSION_KEY } from '../utils/storage.js';
 import { canManagePost, createPost, updatePost } from '../utils/posts.js';
 
-const control = 'inline-flex min-h-11 items-center rounded-control border border-border px-5 py-3 text-sm hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-const input = 'mt-2 min-h-11 w-full rounded-control border border-border bg-surface px-3 py-3 focus:outline-none focus:ring-2 focus:ring-ring';
+const control = 'inline-flex min-h-11 items-center rounded-control border border-border px-5 py-3 text-sm hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-slate-600 dark:hover:bg-slate-700 dark:focus-visible:ring-indigo-300';
+const input = 'mt-2 min-h-11 w-full rounded-control border border-border bg-surface px-3 py-3 focus:outline-none focus:ring-2 focus:ring-ring dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-indigo-300';
 
 /** Remount the draft only when navigation selects a different target. */
 export default function WriteBlog() {
@@ -70,15 +70,15 @@ function Editor({ id }) {
   else if (id && !permitted) warning = 'Only the author or an administrator can change this post.';
 
   return (
-    <section aria-labelledby="write-title" className="mx-auto max-w-reading py-section">
+    <section aria-labelledby="write-title" className="mx-auto max-w-reading py-section dark:bg-slate-900 dark:text-slate-100">
       <h1 id="write-title" className="font-editorial text-headline">
         {id && !opened ? (snapshot.posts.ok ? 'Post not found' : 'Posts unavailable') : id ? 'Edit Blog' : 'Write a Blog'}
       </h1>
-      <p className="mt-4 text-foreground-muted">
+      <p className="mt-4 text-foreground-muted dark:text-slate-300">
         Plain text, saved in this browser only. Keep a separate copy. Other tabs can overwrite saved changes; unsaved text here is not refreshed.
       </p>
       {warning && (
-        <div role="alert" className="mt-6 space-y-3 text-error-foreground">
+        <div role="alert" className="mt-6 space-y-3 text-error-foreground dark:text-red-300">
           <p>{warning}</p>
           {!snapshot.posts.ok && (
             <p>Check site storage access or restore a saved copy. Clearing site data loses writing.</p>
@@ -100,7 +100,7 @@ function Editor({ id }) {
               aria-describedby={result?.errors?.title ? 'title-error' : undefined}
               className={input} />
             {result?.errors?.title && (
-              <p id="title-error" role="alert" className="mt-2 text-sm text-error-foreground">
+              <p id="title-error" role="alert" className="mt-2 text-sm text-error-foreground dark:text-red-300">
                 {result.errors.title}
               </p>
             )}
@@ -115,16 +115,22 @@ function Editor({ id }) {
               aria-describedby={result?.errors?.content ? 'content-error content-count' : 'content-count'}
               className={input + ' min-h-64 resize-y text-reading'} />
             {result?.errors?.content && (
-              <p id="content-error" role="alert" className="mt-2 text-sm text-error-foreground">
+              <p id="content-error" role="alert" className="mt-2 text-sm text-error-foreground dark:text-red-300">
                 {result.errors.content}
               </p>
             )}
-            <p id="content-count" role="status" aria-live="polite" aria-atomic="true" className="mt-2 text-sm tabular-nums text-foreground-muted">
+            <p
+              id="content-count"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="mt-2 text-sm tabular-nums text-foreground-muted dark:text-slate-300"
+            >
               {form.content.length} characters
             </p>
           </div>
           {result && !result.ok && !result.errors && (
-            <p role="alert" className="text-error-foreground">
+            <p role="alert" className="text-error-foreground dark:text-red-300">
               {result.message} Your unsaved text is still available.
             </p>
           )}
@@ -132,7 +138,7 @@ function Editor({ id }) {
             <button
               type="submit"
               className={'min-h-11 rounded-control bg-primary-700 px-5 py-3 font-medium text-white hover:bg-primary-800 ' +
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'}
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-indigo-700 dark:hover:bg-indigo-600 dark:focus-visible:ring-indigo-300 dark:focus-visible:ring-offset-slate-900'}
             >
               {id ? 'Save Changes' : 'Publish Blog'}
             </button>

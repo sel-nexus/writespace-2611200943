@@ -7,6 +7,49 @@ async function openNavigation(page) {
   if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
 }
 
+/** Compare computed foreground with the composited solid ancestor backgrounds. */
+async function expectReadable(locator) {
+  await expect(locator).toBeVisible();
+  const result = await locator.evaluate((element) => {
+    const parse = (color) => {
+      const match = color.match(/^rgba?\(([^)]+)\)$/);
+      if (!match) throw new Error(`Unsupported computed color: ${color}`);
+      const parts = match[1].split(/[,/\s]+/).filter(Boolean).map(Number);
+      return [parts[0], parts[1], parts[2], parts[3] ?? 1];
+    };
+    const blend = (front, back) => {
+      const alpha = front[3] + back[3] * (1 - front[3]);
+      if (!alpha) return [0, 0, 0, 0];
+      return [0, 1, 2].map((i) => (front[i] * front[3] + back[i] * back[3] * (1 - front[3])) / alpha)
+        .concat(alpha);
+    };
+    let background = [0, 0, 0, 0];
+    for (let node = element; node && background[3] < 0.999999; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (Number(style.opacity) !== 1 || style.backgroundImage !== 'none') {
+        throw new Error(`Cannot calculate solid background for ${node.tagName}: ${style.backgroundImage}, opacity ${style.opacity}`);
+      }
+      background = blend(background, parse(style.backgroundColor));
+    }
+    if (background[3] < 0.999999) throw new Error('No opaque rendered background found');
+    const foreground = blend(parse(getComputedStyle(element).color), background);
+    const luminance = (color) => color.slice(0, 3).reduce((sum, channel, i) => {
+      const value = channel / 255;
+      return sum + [0.2126, 0.7152, 0.0722][i] * (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    }, 0);
+    const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    return { foreground, background, ratio: (values[0] + 0.05) / (values[1] + 0.05) };
+  });
+  expect(result.ratio, `Text contrast: ${JSON.stringify(result)}`).toBeGreaterThanOrEqual(4.5);
+}
+
+/** Verify persistence and the class that activates the theme styles. */
+async function expectTheme(page, theme) {
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('writespace_theme'))).toBe(theme);
+  if (theme === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+  else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+}
+
 test('guest discovers newest previews, enters guarded reading and joins from the landing CTA', async ({ page, consoleErrors }) => {
   const posts = [
     { id: 'old', title: 'Older notes', content: 'Old local writing', createdAt: '2024-01-01', authorId: 'm', authorName: 'Mira' },
@@ -94,5 +137,121 @@ test('empty and corrupt posts stay distinct and cross-tab storage events refresh
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
   expect(otherErrors).toEqual([]);
   await other.close();
+  expect(consoleErrors).toEqual([]);
+});
+
+
+test('dark discovery and auth surfaces remain readable through navigation and validation', async ({ page, consoleErrors }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.addInitScript(() => localStorage.setItem('writespace_posts', JSON.stringify([
+    { id: 'theme', title: 'Dark preview', content: 'Visible writing', createdAt: '2026-01-01', authorId: 'u', authorName: 'Mira' },
+  ])));
+  await page.goto('/');
+  const preview = page.getByLabel('Writing preview illustration');
+  const lightBackground = await preview.evaluate((element) => getComputedStyle(element).backgroundColor);
+  await expectTheme(page, 'light');
+  await expectReadable(preview.getByText('A little room to think'));
+  await openNavigation(page);
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await expectTheme(page, 'dark');
+  await expect(preview).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  expect(await preview.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightBackground);
+  await expectReadable(preview.getByText('A little room to think'));
+  const hero = page.getByRole('region', { name: 'Your thoughts. Your space. Beautifully simple.' });
+  await expect(hero).toHaveCSS('background-image', /gradient/);
+  const story = page.getByRole('link', { name: 'Dark preview' });
+  await expect(story.locator('xpath=ancestor::article')).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  await expect(page.getByText(/Mira ·/)).toHaveCSS('color', 'rgb(203, 213, 225)');
+  await expectReadable(page.getByText(/Mira ·/));
+  await page.getByRole('link', { name: 'Get Started Free' }).click();
+  await expect(page).toHaveURL('/register');
+  await expectTheme(page, 'dark');
+  const username = page.getByLabel('Username', { exact: true });
+  await expect(username).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  await expect(username).toHaveCSS('color', 'rgb(241, 245, 249)');
+  await username.fill('theme-reader');
+  await expectReadable(username);
+  await username.clear();
+  await expectReadable(page.getByRole('heading', { name: 'Create your local account' }));
+  await page.getByRole('button', { name: 'Register', exact: true }).click();
+  const registerError = page.locator('#username-error');
+  await expect(registerError).toBeVisible();
+  await expect(registerError).toHaveCSS('color', 'rgb(252, 165, 165)');
+  await expectReadable(registerError);
+  await page.getByRole('link', { name: 'Log in', exact: true }).last().click();
+  await expect(page).toHaveURL('/login');
+  await expectTheme(page, 'dark');
+  await expect(page.getByLabel('Username', { exact: true })).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  await expectReadable(page.getByRole('heading', { name: 'Log in' }));
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await expect(page.locator('#username-error')).toHaveCSS('color', 'rgb(252, 165, 165)');
+  await expectReadable(page.locator('#username-error'));
+  await page.getByLabel('Username', { exact: true }).fill('admin');
+  await page.getByLabel('Password', { exact: true }).fill('admin');
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await page.getByRole('link', { name: 'WriteSpace', exact: true }).click();
+  await page.getByRole('link', { name: 'Dark preview' }).click();
+  await expect(page).toHaveURL('/blog/theme');
+  await expectTheme(page, 'dark');
+  await expectReadable(page.getByLabel('Post content'));
+  expect(consoleErrors).toEqual([]);
+});
+
+test('light auth, reader and error text contrast with their effective backgrounds', async ({ page, consoleErrors }) => {
+  await page.addInitScript(() => localStorage.setItem('writespace_posts', JSON.stringify([
+    { id: 'light', title: 'Light preview', content: 'Visible light writing', createdAt: '2026-01-01', authorId: 'u', authorName: 'Mira' },
+  ])));
+  await page.goto('/');
+  await expectTheme(page, 'light');
+  await openNavigation(page);
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await expectTheme(page, 'dark');
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
+  await expectTheme(page, 'light');
+  await expectReadable(page.getByLabel('Writing preview illustration').getByText('A little room to think'));
+  await page.getByRole('link', { name: 'Get Started Free' }).click();
+  await expectTheme(page, 'light');
+  await page.getByLabel('Username', { exact: true }).fill('theme-reader');
+  await expectReadable(page.getByLabel('Username', { exact: true }));
+  await page.getByLabel('Username', { exact: true }).clear();
+  await expectReadable(page.getByRole('heading', { name: 'Create your local account' }));
+  await page.getByRole('button', { name: 'Register', exact: true }).click();
+  await expectReadable(page.locator('#username-error'));
+  await page.getByRole('link', { name: 'Log in', exact: true }).last().click();
+  await expectTheme(page, 'light');
+  await expectReadable(page.getByRole('heading', { name: 'Log in' }));
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await expectReadable(page.locator('#username-error'));
+  await page.getByLabel('Username', { exact: true }).fill('admin');
+  await page.getByLabel('Password', { exact: true }).fill('admin');
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await page.getByRole('link', { name: 'WriteSpace', exact: true }).click();
+  await page.getByRole('link', { name: 'Light preview' }).click();
+  await expect(page).toHaveURL('/blog/light');
+  await expectReadable(page.getByLabel('Post content'));
+  expect(consoleErrors).toEqual([]);
+});
+
+test('unmatched route remains readable after switching to dark mode', async ({ page, consoleErrors }) => {
+  await page.goto('/unmatched/contrast');
+  await expectTheme(page, 'light');
+  await openNavigation(page);
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await expectTheme(page, 'dark');
+  await expectReadable(page.getByRole('heading', { name: 'This page isn’t here.' }));
+  await expectReadable(page.getByText('The address does not match a page in this demo.', { exact: false }));
+  expect(consoleErrors).toEqual([]);
+});
+
+test('unmatched route remains readable after switching back to light mode', async ({ page, consoleErrors }) => {
+  await page.goto('/unmatched/contrast');
+  await expectTheme(page, 'light');
+  await openNavigation(page);
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await expectTheme(page, 'dark');
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
+  await expectTheme(page, 'light');
+  await expectReadable(page.getByRole('heading', { name: 'This page isn’t here.' }));
+  await expectReadable(page.getByText('The address does not match a page in this demo.', { exact: false }));
   expect(consoleErrors).toEqual([]);
 });

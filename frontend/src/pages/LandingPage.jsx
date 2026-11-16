@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { readPosts, readSession, POSTS_KEY, SESSION_KEY } from '../utils/storage.js';
 import { excerpt, formatDate, newestFirst } from '../utils/presentation.js';
 
-const control = 'inline-flex min-h-11 items-center justify-center rounded-control px-5 py-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-safe:transition-colors motion-safe:duration-quick';
+const control = 'inline-flex min-h-11 items-center justify-center rounded-control px-5 py-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-indigo-300 dark:focus-visible:ring-offset-slate-950 motion-safe:transition-colors motion-safe:duration-quick';
 const features = [
   { title: 'Write Freely', description: 'A simple space for notes, stories, and ideas. Let your words take the lead.', path: 'M4 20h4L20 8l-4-4L4 16v4ZM13 7l4 4' },
   { title: 'Private & Local', description: 'Writing stays in this browser, not on a server. Local does not mean encrypted or secure.', path: 'M5 4h14v16H5V4Zm4 4h6M9 12h6M9 16h3' },
@@ -27,105 +27,129 @@ export default function LandingPage() {
   const previews = posts.ok ? newestFirst(posts.value).slice(0, 3) : [];
   return (
     <>
-      <section aria-labelledby="landing-title" className="flex min-h-screen items-center bg-gradient-to-br from-surface-raised via-background to-primary-50">
+      <section
+        aria-labelledby="landing-title"
+        className="flex min-h-screen items-center bg-gradient-to-br from-surface-raised via-background
+          to-primary-50 text-foreground dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950 dark:text-slate-100"
+      >
         <div className="mx-auto grid w-full max-w-shell items-center gap-16 px-6 py-section sm:px-10 lg:grid-cols-2">
           <div>
-            <p className="mb-6 text-sm font-medium tracking-wide text-foreground-muted">
+            <p className="mb-6 text-sm font-medium tracking-wide text-foreground-muted dark:text-slate-300">
               A space for your words.
             </p>
             <h1 id="landing-title" className="font-editorial text-headline">
               Your thoughts. Your space. Beautifully simple.
             </h1>
-            <p className="mt-6 max-w-reading text-reading text-foreground-muted">
+            <p className="mt-6 max-w-reading text-reading text-foreground-muted dark:text-slate-300">
               Welcome to WriteSpace. Make room for the stories and ideas only you can write.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className={control + ' bg-primary-700 text-white hover:bg-primary-800'}>
+              <Link
+                to="/register"
+                className={control + ' bg-primary-700 text-white hover:bg-primary-800 ' +
+                  'dark:bg-indigo-700 dark:text-white dark:hover:bg-indigo-600'}
+              >
                 Get Started Free
               </Link>
-              <Link to={session ? '/blogs' : '/login'} className={control + ' border border-border bg-surface hover:bg-surface-raised'}>
+              <Link
+                to={session ? '/blogs' : '/login'}
+                className={control + ' border border-border bg-surface text-foreground hover:bg-surface-raised ' +
+                  'dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'}
+              >
                 Start Reading
               </Link>
             </div>
           </div>
-          <div aria-label="Writing preview illustration" className="rounded-control border border-border bg-surface p-8 motion-safe:animate-preview-float">
-            <p className="text-sm text-foreground-muted">
+          <div
+            aria-label="Writing preview illustration"
+            className="rounded-control border border-border bg-surface p-8 dark:border-slate-700
+              dark:bg-slate-900 motion-safe:animate-preview-float"
+          >
+            <p className="text-sm text-foreground-muted dark:text-slate-300">
               A little room to think
             </p>
             <h2 className="mt-6 font-editorial text-3xl">
               Every story starts with a thought.
             </h2>
-            <p className="mt-6 text-reading text-foreground-muted">
+            <p className="mt-6 text-reading text-foreground-muted dark:text-slate-300">
               A quiet morning. An unfinished idea. A sentence worth keeping. This is your space to begin.
             </p>
-            <p className="mt-8 text-xs text-foreground-muted">
+            <p className="mt-8 text-xs text-foreground-muted dark:text-slate-300">
               Illustration · not a saved post
             </p>
           </div>
         </div>
       </section>
-      <section aria-labelledby="features-title" className="mx-auto max-w-shell px-6 py-section sm:px-10">
+      <section aria-labelledby="features-title" className="mx-auto max-w-shell px-6 py-section text-foreground dark:text-slate-100 sm:px-10">
         <h2 id="features-title" className="font-editorial text-3xl">
           Less in the way. More on the page.
         </h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
-            <article key={feature.title} className="rounded-control border border-border p-6">
+            <article key={feature.title} className="rounded-control border border-border bg-surface p-6 dark:border-slate-700 dark:bg-slate-900">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-6 w-6">
                 <path d={feature.path} />
               </svg>
               <h3 className="mt-6 font-editorial text-2xl">
                 {feature.title}
               </h3>
-              <p className="mt-4 leading-relaxed text-foreground-muted">
+              <p className="mt-4 leading-relaxed text-foreground-muted dark:text-slate-300">
                 {feature.description}
               </p>
             </article>
           ))}
         </div>
-        <p className="mt-8 max-w-reading leading-relaxed text-foreground-muted">
+        <p className="mt-8 max-w-reading leading-relaxed text-foreground-muted dark:text-slate-300">
           Browser-local data belongs to this browser and this site address. It does not synchronize across devices, and clearing site data can remove it. Keep a separate copy of writing you want to preserve. Concurrent tabs can overwrite each other’s updates.
         </p>
       </section>
-      <section aria-labelledby="recent-title" className="mx-auto max-w-shell px-6 pb-section sm:px-10">
+      <section aria-labelledby="recent-title" className="mx-auto max-w-shell px-6 pb-section text-foreground dark:text-slate-100 sm:px-10">
         <h2 id="recent-title" className="font-editorial text-3xl">
           Recent writing
         </h2>
-        <p className="mt-3 text-foreground-muted">
+        <p className="mt-3 text-foreground-muted dark:text-slate-300">
           The newest posts saved in this browser.
         </p>
         {!posts.ok ? (
-          <div role="alert" className="mt-8 rounded-control border border-border p-6 text-error-foreground">
+          <div
+            role="alert"
+            className="mt-8 rounded-control border border-border bg-surface p-6 dark:border-slate-700 dark:bg-slate-900 text-error-foreground dark:text-red-300"
+          >
             <p>
               {posts.status === 'corrupt' ? 'Saved posts cannot be read because local data is corrupt.' : 'Posts are unavailable because browser storage cannot be read.'} No changes were made.
             </p>
             <p className="mt-3">
               Check browser storage access or restore a saved copy. Do not clear site data unless you intend to lose it.
             </p>
-            <button type="button" className={control + ' mt-4 border border-border text-foreground hover:bg-surface-raised'} onClick={() =>
-               setPosts(readPosts())}>Retry loading posts
+            <button
+              type="button"
+              className={control + ' mt-4 border border-border text-foreground hover:bg-surface-raised ' +
+                'dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800'}
+              onClick={() => setPosts(readPosts())}
+            >
+              Retry loading posts
             </button>
           </div>
         ) : previews.length === 0 ? (
-          <p role="status" className="mt-8 text-foreground-muted">
+          <p role="status" className="mt-8 text-foreground-muted dark:text-slate-300">
             No posts yet — check back soon!
           </p>
         ) : (
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {previews.map((post) => (
-              <article key={post.id} className="min-w-0 rounded-control border border-border p-6">
+              <article key={post.id} className="min-w-0 rounded-control border border-border bg-surface p-6 dark:border-slate-700 dark:bg-slate-900">
                 <h3 className="break-words font-editorial text-2xl">
                   <Link
                     to={'/blog/' + encodeURIComponent(post.id)}
-                    className="rounded-control hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="rounded-control hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:focus-visible:ring-indigo-300"
                   >
                     {post.title}
                   </Link>
                 </h3>
-                <p className="mt-4 break-words leading-relaxed text-foreground-muted">
+                <p className="mt-4 break-words leading-relaxed text-foreground-muted dark:text-slate-300">
                   {excerpt(post.content)}
                 </p>
-                <p className="mt-6 break-words text-sm text-foreground-muted">
+                <p className="mt-6 break-words text-sm text-foreground-muted dark:text-slate-300">
                   {post.authorName} · {formatDate(post.createdAt)}
                 </p>
               </article>
@@ -133,8 +157,8 @@ export default function LandingPage() {
           </div>
         )}
       </section>
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-shell flex-col justify-between gap-4 px-6 py-8 text-sm text-foreground-muted sm:px-10 md:flex-row">
+      <footer className="border-t border-border dark:border-slate-700">
+        <div className="mx-auto flex max-w-shell flex-col justify-between gap-4 px-6 py-8 text-sm text-foreground-muted dark:text-slate-300 sm:px-10 md:flex-row">
           <p>
             © {new Date().getFullYear()} WriteSpace · Local to your browser. No cross-device synchronization.
           </p>

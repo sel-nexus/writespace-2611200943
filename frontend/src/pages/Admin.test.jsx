@@ -195,3 +195,30 @@ it('account events refresh list and protections without losing draft; corrupt is
   await userEvent.click(screen.getByRole('button', { name: 'Retry loading accounts' }));
   expect(localStorage.getItem(USERS_KEY)).toBe('{corrupt');
 });
+
+it('pairs dashboard metric, metadata, error and destructive styles for dark mode', () => {
+  localStorage.setItem(USERS_KEY, '{corrupt');
+  view();
+  const metric = screen.getByLabelText('Total Users');
+  expect(metric).toHaveTextContent('Unavailable');
+  expect(metric).toHaveClass('bg-surface', 'dark:bg-slate-800', 'dark:border-slate-700');
+  expect(within(metric).getByText('Unavailable')).toHaveClass('dark:text-slate-100');
+  expect(screen.getByRole('alert')).toHaveClass('text-error-foreground', 'dark:text-red-300');
+  expect(screen.getAllByText(/Mira ·/)[0]).toHaveClass('dark:text-slate-300');
+  expect(screen.getByRole('button', { name: 'Delete Post 5' })).toHaveClass('dark:text-red-300', 'dark:focus-visible:ring-indigo-300');
+});
+
+it('keeps forms, responsive account rows, validation and protection readable in dark mode', async () => {
+  view('users');
+  const username = screen.getByLabelText('Username', { exact: true });
+  expect(username).toHaveClass('bg-surface', 'dark:bg-slate-800', 'dark:text-slate-100', 'dark:focus-visible:ring-indigo-300');
+  expect(screen.getByLabelText('Role', { exact: true })).toHaveClass('dark:bg-slate-800', 'dark:text-slate-100');
+  await userEvent.click(screen.getByRole('button', { name: 'Create User' }));
+  expect(document.getElementById('username-error')).toHaveClass('text-error-foreground', 'dark:text-red-300');
+  const table = within(screen.getByRole('table'));
+  expect(table.getByRole('button', { name: 'Delete admin' })).toBeDisabled();
+  expect(table.getByRole('button', { name: 'Delete mira' })).toHaveClass('dark:text-red-300', 'dark:focus-visible:ring-indigo-300');
+  const card = screen.getByRole('article', { name: 'Account mira' });
+  expect(card).toHaveClass('bg-surface', 'dark:bg-slate-900', 'dark:border-slate-700');
+  expect(within(card).getByText('user')).toHaveClass('dark:bg-slate-700', 'dark:text-slate-100');
+});

@@ -6,7 +6,7 @@ import { readUsers, readSession, USERS_KEY, SESSION_KEY } from '../utils/storage
 import { allAccounts, createUser, deleteUser } from '../utils/users.js';
 
 const emptyForm = { displayName: '', username: '', password: '', role: '' };
-const control = 'min-h-11 rounded-control border border-border px-5 py-3 text-sm hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring';
+const control = 'min-h-11 rounded-control border border-border px-5 py-3 text-sm hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring dark:border-slate-700 dark:hover:bg-slate-800 dark:focus-visible:ring-indigo-300';
 const fields = [['displayName', 'Display name'], ['username', 'Username'], ['password', 'Password'], ['role', 'Role']];
 /** Preserve drafts and saved records on all failures; refresh only after confirmed saves. */
 export default function UserManagement() {
@@ -50,11 +50,11 @@ export default function UserManagement() {
   }
   const accounts = users.ok ? allAccounts(users.value) : [];
   return (
-    <section className="py-section">
+    <section className="py-section text-foreground dark:bg-slate-900 dark:text-slate-100">
       <h1 className="font-editorial text-headline">Manage Users</h1>
       <Link to="/admin" className={control + ' mt-6 inline-flex'}>Back to dashboard</Link>
       {!users.ok && (
-        <div role="alert" className="mt-6 space-y-3 text-error-foreground">
+        <div role="alert" className="mt-6 space-y-3 text-error-foreground dark:text-red-300">
           <p>Accounts unavailable: {users.status}. {users.message}</p>
           <p>Restore storage access or a saved copy. Clearing site data loses accounts and writing.</p>
           <button type="button" className={control} onClick={() => setUsers(readUsers())}>Retry loading accounts</button>
@@ -69,7 +69,7 @@ export default function UserManagement() {
               {field === 'role' ? (
                 <select id={'account-' + field} value={form[field]} required aria-required="true"
                   aria-invalid={Boolean(errors[field])} aria-describedby={errors[field] ? field + '-error' : undefined}
-                  className={control + ' w-full bg-surface'} onChange={(event) => setForm({ ...form, [field]: event.target.value })}>
+                  className={control + ' w-full bg-surface text-foreground dark:bg-slate-800 dark:text-slate-100'} onChange={(event) => setForm({ ...form, [field]: event.target.value })}>
                   <option value="">Choose a role</option>
                   <option value="admin">admin</option>
                   <option value="user">user</option>
@@ -78,15 +78,25 @@ export default function UserManagement() {
                 <input id={'account-' + field} type={field === 'password' ? 'password' : 'text'}
                   autoComplete={field === 'password' ? 'new-password' : 'off'} value={form[field]} required aria-required="true"
                   aria-invalid={Boolean(errors[field])} aria-describedby={errors[field] ? field + '-error' : undefined}
-                  className={control + ' w-full bg-surface'} onChange={(event) => setForm({ ...form, [field]: event.target.value })} />
+                  className={control + ' w-full bg-surface text-foreground dark:bg-slate-800 dark:text-slate-100'} onChange={(event) => setForm({ ...form, [field]: event.target.value })} />
               )}
-              {errors[field] && <p id={field + '-error'} role="alert" className="mt-2 text-sm text-error-foreground">{errors[field]}</p>}
+              {errors[field] && (
+                <p id={field + '-error'} role="alert" className="mt-2 text-sm text-error-foreground dark:text-red-300">
+                  {errors[field]}
+                </p>
+              )}
             </div>
           ))}
-          <button type="submit" className={control + ' bg-primary-700 text-white hover:bg-primary-800 sm:col-span-2'}>Create User</button>
+          <button
+            type="submit"
+            className={control + ' bg-primary-700 text-white hover:bg-primary-800 ' +
+              'dark:border-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 sm:col-span-2'}
+          >
+            Create User
+          </button>
         </form>
       </section>
-      {error && <p role="alert" className="mt-4 text-error-foreground">{error}</p>}
+      {error && <p role="alert" className="mt-4 text-error-foreground dark:text-red-300">{error}</p>}
       {success && <p role="status" className="mt-4">{success}</p>}
       {users.ok && (
         <section aria-labelledby="local-accounts" className="mt-12">
@@ -94,7 +104,7 @@ export default function UserManagement() {
           <div className="mt-6 hidden overflow-x-auto md:block">
             <table aria-label="Local accounts" className="w-full text-left text-sm">
               <thead>
-                <tr className="text-foreground-muted">
+                <tr className="text-foreground-muted dark:text-slate-300">
                   {['Display name', 'Username', 'Role', 'Date joined', 'Actions'].map((label) => (
                     <th key={label} scope="col" className="p-4 font-medium">{label}</th>
                   ))}
@@ -110,7 +120,7 @@ export default function UserManagement() {
           </div>
         </section>
       )}
-      <p className="mt-8 text-sm text-foreground-muted">
+      <p className="mt-8 text-sm text-foreground-muted dark:text-slate-300">
         Other tabs refresh the list without discarding drafts. Concurrent changes are not transactional; the last write may overwrite another tab’s changes.
       </p>
     </section>

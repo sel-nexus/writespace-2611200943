@@ -5,7 +5,7 @@ import { BlogCard } from '../components/BlogCard.jsx';
 import { readPosts, readSession, POSTS_KEY, SESSION_KEY } from '../utils/storage.js';
 import { newestFirst } from '../utils/presentation.js';
 
-const control = 'inline-flex min-h-11 items-center rounded-control border border-border px-5 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-surface-raised';
+const control = 'inline-flex min-h-11 items-center rounded-control border border-border px-5 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-surface-raised dark:border-slate-600 dark:hover:bg-slate-700 dark:focus-visible:ring-indigo-300';
 /** Render newest-first writing and refresh relevant snapshots on cross-tab events. */
 export default function Home() {
   const [posts, setPosts] = useState(readPosts);
@@ -22,12 +22,12 @@ export default function Home() {
   }, []);
   const sorted = posts.ok ? newestFirst(posts.value) : [];
   return (
-    <section aria-labelledby="feed-title" className="py-section">
+    <section aria-labelledby="feed-title" className="py-section dark:bg-slate-900 dark:text-slate-100">
       <h1 id="feed-title" className="font-editorial text-headline">All Blogs</h1>
-      <p className="mt-4 text-foreground-muted">Writing saved in this browser, newest first.</p>
-      <p className="mt-3 text-sm text-foreground-muted">Keep a separate copy. Concurrent tabs can overwrite each other’s updates.</p>
+      <p className="mt-4 text-foreground-muted dark:text-slate-300">Writing saved in this browser, newest first.</p>
+      <p className="mt-3 text-sm text-foreground-muted dark:text-slate-300">Keep a separate copy. Concurrent tabs can overwrite each other’s updates.</p>
       {!posts.ok ? (
-        <div role="alert" className="mt-8 space-y-4 rounded-control border border-border p-6 text-error-foreground">
+        <div role="alert" className="mt-8 space-y-4 rounded-control border border-border p-6 text-error-foreground dark:border-slate-700 dark:text-red-300">
           <p>
             {posts.status === 'corrupt'
               ? 'Saved posts cannot be read because local data is corrupt.'
