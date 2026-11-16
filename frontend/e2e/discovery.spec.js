@@ -96,3 +96,37 @@ test('empty and corrupt posts stay distinct and cross-tab storage events refresh
   await other.close();
   expect(consoleErrors).toEqual([]);
 });
+
+
+test('dark discovery and auth surfaces remain readable through navigation and validation', async ({ page, consoleErrors }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.addInitScript(() => localStorage.setItem('writespace_posts', JSON.stringify([
+    { id: 'theme', title: 'Dark preview', content: 'Visible writing', createdAt: '2026-01-01', authorId: 'u', authorName: 'Mira' },
+  ])));
+  await page.goto('/');
+  const preview = page.getByLabel('Writing preview illustration');
+  const lightBackground = await preview.evaluate((element) => getComputedStyle(element).backgroundColor);
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await expect(preview).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  expect(await preview.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightBackground);
+  const hero = page.getByRole('region', { name: 'Your thoughts. Your space. Beautifully simple.' });
+  await expect(hero).toHaveCSS('background-image', /gradient/);
+  const story = page.getByRole('link', { name: 'Dark preview' });
+  await expect(story.locator('xpath=ancestor::article')).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  await expect(page.getByText(/Mira ·/)).toHaveCSS('color', 'rgb(203, 213, 225)');
+  await page.getByRole('link', { name: 'Get Started Free' }).click();
+  await expect(page).toHaveURL('/register');
+  const username = page.getByLabel('Username', { exact: true });
+  await expect(username).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  await expect(username).toHaveCSS('color', 'rgb(241, 245, 249)');
+  await page.getByRole('button', { name: 'Register', exact: true }).click();
+  const registerError = page.locator('#username-error');
+  await expect(registerError).toBeVisible();
+  await expect(registerError).toHaveCSS('color', 'rgb(252, 165, 165)');
+  await page.getByRole('link', { name: 'Log in', exact: true }).last().click();
+  await expect(page).toHaveURL('/login');
+  await expect(page.getByLabel('Username', { exact: true })).toHaveCSS('background-color', 'rgb(15, 23, 42)');
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await expect(page.locator('#username-error')).toHaveCSS('color', 'rgb(252, 165, 165)');
+  expect(consoleErrors).toEqual([]);
+});

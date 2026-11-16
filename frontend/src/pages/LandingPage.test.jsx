@@ -110,3 +110,26 @@ it('links a preview to its encoded protected reader address', async () => {
   await userEvent.click(screen.getByRole('link', { name: 'a/b' }));
   expect(screen.getByLabelText('Address')).toHaveTextContent('/blog/a%2Fb');
 });
+
+
+it('pairs discovery surfaces, metadata, actions and focus with dark variants', () => {
+  localStorage.setItem(POSTS_KEY, JSON.stringify([post('Themed story', '2026-01-01')]));
+  view();
+  const hero = screen.getByRole('region', { name: 'Your thoughts. Your space. Beautifully simple.' });
+  expect(hero).toHaveClass('bg-gradient-to-br', 'dark:from-slate-900', 'dark:via-slate-950', 'dark:to-indigo-950', 'dark:text-slate-100');
+  expect(screen.getByLabelText('Writing preview illustration')).toHaveClass('bg-surface', 'dark:bg-slate-900', 'dark:border-slate-700');
+  expect(screen.getByRole('heading', { name: 'Write Freely' }).closest('article')).toHaveClass('dark:bg-slate-900', 'dark:border-slate-700');
+  const story = screen.getByRole('link', { name: 'Themed story' });
+  expect(story.closest('article')).toHaveClass('dark:bg-slate-900', 'dark:border-slate-700');
+  expect(story).toHaveClass('dark:focus-visible:ring-indigo-300');
+  expect(screen.getByText(/Mira ·/)).toHaveClass('text-foreground-muted', 'dark:text-slate-300');
+  expect(screen.getByRole('link', { name: 'Start Reading' })).toHaveClass('dark:bg-slate-800', 'dark:text-slate-100', 'dark:focus-visible:ring-offset-slate-950');
+  expect(screen.getByRole('contentinfo')).toHaveClass('dark:border-slate-700');
+});
+
+it('keeps the discovery error and retry legible in dark mode', () => {
+  localStorage.setItem(POSTS_KEY, '{bad');
+  view();
+  expect(screen.getByRole('alert')).toHaveClass('text-error-foreground', 'dark:text-red-300', 'dark:bg-slate-900', 'dark:border-slate-700');
+  expect(screen.getByRole('button', { name: 'Retry loading posts' })).toHaveClass('dark:text-slate-100', 'dark:hover:bg-slate-800');
+});

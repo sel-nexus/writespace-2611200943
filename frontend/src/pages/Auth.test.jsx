@@ -240,3 +240,20 @@ it('activates writer navigation without modifying stored identity', async () => 
   expect(screen.getByRole('button', { name: 'Toggle navigation' })).toHaveAttribute('aria-expanded', 'false');
   expect(readSession().value).toEqual(identity);
 });
+
+
+it.each(['/login', '/register'])('pairs auth fields, validation and actions with dark variants on %s', async (path) => {
+  const user = userEvent.setup();
+  authView(path);
+  const title = screen.getByRole('heading', { name: path === '/login' ? 'Log in' : 'Create your local account' });
+  expect(title.closest('section')).toHaveClass('text-foreground', 'dark:text-slate-100');
+  expect(screen.getByText(path === '/login' ? /Use a local account/ : /A writing identity/)).toHaveClass('dark:text-slate-300');
+  const field = screen.getByLabelText('Username');
+  expect(field).toHaveClass('bg-surface', 'text-foreground', 'dark:bg-slate-900', 'dark:text-slate-100', 'dark:border-slate-600', 'dark:focus:ring-indigo-300');
+  const submit = screen.getByRole('button', { name: path === '/login' ? 'Log in' : 'Register', exact: true });
+  expect(submit).toHaveClass('dark:bg-indigo-700', 'dark:focus-visible:ring-indigo-300', 'dark:focus-visible:ring-offset-slate-950');
+  await user.click(submit);
+  expect(document.getElementById(field.getAttribute('aria-describedby'))).toHaveClass('text-error-foreground', 'dark:text-red-300');
+  const link = screen.getAllByRole('link', { name: path === '/login' ? 'Register' : 'Log in', exact: true }).at(-1);
+  expect(link).toHaveClass('text-primary-700', 'dark:text-indigo-300', 'dark:focus-visible:ring-indigo-300');
+});
