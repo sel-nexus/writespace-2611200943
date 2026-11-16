@@ -269,3 +269,18 @@ it('quota failure can retry the retained edit once storage works', async () => {
   expect(screen.getByLabelText('Address').textContent).toBe('/blog/p1');
   expect(JSON.parse(localStorage.getItem(POSTS_KEY))[0]).toEqual({ ...original, title: 'Draft title', content: ' Draft\n  content ' });
 });
+
+it('pairs editor fields, controls and validation errors with dark styles', async () => {
+  view('/write', null);
+  expect(screen.getByRole('heading', { name: 'Write a Blog' }).closest('section')).toHaveClass('dark:bg-slate-900', 'dark:text-slate-100');
+  for (const name of ['Title', 'Content']) {
+    expect(screen.getByLabelText(name)).toHaveClass('bg-surface', 'dark:bg-slate-800', 'dark:text-slate-100', 'dark:border-slate-600', 'dark:focus:ring-indigo-300');
+  }
+  expect(screen.getByRole('link', { name: 'Cancel' })).toHaveClass('dark:hover:bg-slate-700');
+  expect(screen.getByRole('button', { name: 'Publish Blog' })).toHaveClass('dark:bg-indigo-700', 'dark:focus-visible:ring-offset-slate-900');
+  await save();
+  for (const error of screen.getAllByText('This field is required.')) {
+    expect(error).toHaveClass('text-error-foreground', 'dark:text-red-300');
+  }
+  expect(localStorage.getItem(POSTS_KEY)).toBeNull();
+});

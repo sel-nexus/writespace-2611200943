@@ -21,6 +21,46 @@ async function writeLink(page) {
   await page.getByRole('link', { name: 'Write', exact: true }).click();
 }
 
+test('dark mode remains readable while publishing, reading and revising a post', async ({ page, consoleErrors }) => {
+  await seed(page);
+  await page.goto('/blogs');
+  const toggle = page.getByRole('button', { name: 'Toggle navigation' });
+  if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.getByText('No posts yet. Make room for your first idea.')).toHaveCSS('color', 'rgb(241, 245, 249)');
+  await page.getByRole('link', { name: 'Write your first post' }).click();
+  const title = page.getByLabel('Title', { exact: true });
+  const content = page.getByLabel('Content', { exact: true });
+  await expect(title).toHaveCSS('background-color', 'rgb(30, 41, 59)');
+  await expect(title).toHaveCSS('color', 'rgb(241, 245, 249)');
+  await page.getByRole('button', { name: 'Publish Blog' }).click();
+  await expect(page.getByText('This field is required.', { exact: true }).first()).toHaveCSS('color', 'rgb(252, 165, 165)');
+  await title.fill('A dark mode journey');
+  await content.fill('Writing that stays readable.');
+  await page.getByRole('button', { name: 'Publish Blog' }).click();
+  await expect(page.getByLabel('Post content')).toHaveText('Writing that stays readable.');
+  await expect(page.getByLabel('Post content')).toHaveCSS('color', 'rgb(241, 245, 249)');
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await page.getByRole('link', { name: 'Edit', exact: true }).click();
+  await expect(content).toHaveValue('Writing that stays readable.');
+  await content.fill('Revised in dark mode.');
+  await page.getByRole('button', { name: 'Save Changes' }).click();
+  await expect(page.getByLabel('Post content')).toHaveText('Revised in dark mode.');
+  await page.getByRole('link', { name: 'Back to blogs' }).click();
+  const card = page.getByRole('article').filter({ hasText: 'A dark mode journey' });
+  await expect(card).toHaveCSS('background-color', 'rgb(30, 41, 59)');
+  await expect(card).toContainText('Revised in dark mode.');
+  await page.reload();
+  await expect(card).toHaveCSS('background-color', 'rgb(30, 41, 59)');
+  if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  await expect(card).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  expect(consoleErrors).toEqual([]);
+});
+
 for (const role of ['user', 'admin']) {
   test(role + ' publishes, reloads, edits, cancels and deletes persisted writing', async ({ page, consoleErrors }) => {
     const session = { ...owner, role };
