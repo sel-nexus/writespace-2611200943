@@ -1,6 +1,6 @@
 /** Compose local authentication routes while preserving the informational demo shell. */
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar.jsx';
 import { PublicNavbar } from './components/PublicNavbar.jsx';
@@ -68,7 +68,7 @@ function NotFound() {
 }
 
 /** Share the demo warning and skip target without duplicating landing chrome. */
-function Layout() {
+function Layout({ theme, onToggle, themeSaveFailed }) {
   const landing = useLocation().pathname === '/';
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
@@ -80,7 +80,12 @@ function Layout() {
       >
         Skip to content
       </a>
-      {landing ? <PublicNavbar /> : <Navbar />}
+      {landing ? <PublicNavbar theme={theme} onToggle={onToggle} /> : <Navbar theme={theme} onToggle={onToggle} />}
+      {themeSaveFailed && (
+        <p role="alert" className="mx-auto max-w-shell px-6 py-3 text-sm text-error-foreground">
+          Theme applies in this tab but may not persist. Check browser storage and try again.
+        </p>
+      )}
       <main
         id="main-content"
         tabIndex={-1}
@@ -90,7 +95,8 @@ function Layout() {
           role="note"
           aria-labelledby="demo-warning"
           className="mx-auto max-w-reading rounded-control border border-border
-            bg-warning-background p-5 text-sm leading-relaxed text-warning-foreground"
+            bg-warning-background p-5 text-sm leading-relaxed text-warning-foreground
+            dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
         >
           <h2 id="demo-warning" className="font-semibold">
             Browser-local demo — not secure authentication
@@ -114,11 +120,42 @@ function Layout() {
   );
 }
 
+Layout.propTypes = {
+  theme: PropTypes.oneOf(['light', 'dark']).isRequired,
+  onToggle: PropTypes.func.isRequired,
+  themeSaveFailed: PropTypes.bool.isRequired,
+};
+
 /** Declare guard groups without inventing pages belonging to later feature slices. */
 export default function App() {
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('writespace_theme');
+      return saved === 'light' || saved === 'dark' ? saved : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+  const [themeSaveFailed, setThemeSaveFailed] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      window.localStorage.setItem('writespace_theme', theme);
+      setThemeSaveFailed(false);
+    } catch {
+      setThemeSaveFailed(true);
+    }
+  }, [theme]);
+
+  /** Change appearance without affecting authentication or other stored data. */
+  function toggleTheme() {
+    setTheme((previous) => previous === 'light' ? 'dark' : 'light');
+  }
+
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route element={<Layout theme={theme} onToggle={toggleTheme} themeSaveFailed={themeSaveFailed} />}>
         <Route path="/" element={<LandingPage />} />
         <Route element={<ProtectedRoute guestOnly />}>
           <Route path="/login" element={<LoginPage />} />

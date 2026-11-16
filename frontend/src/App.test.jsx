@@ -1,10 +1,10 @@
 /** Exercise shell content, storage preservation, and unmatched-route recovery. */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { POSTS_KEY, SESSION_KEY, USERS_KEY } from './utils/storage.js';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App.jsx';
 
 /**
@@ -42,8 +42,8 @@ describe('local-demo shell', () => {
     expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main-content');
   });
 
-  /** Prove rendering preserves corrupt bytes and does not seed or rewrite storage. */
-  it('does not mutate local or session storage when rendered or rerendered', () => {
+  /** Prove only the theme preference is initialized on render. */
+  it('preserves other local and session storage when rendered or rerendered', () => {
     localStorage.setItem('users', '{invalid collection');
     localStorage.setItem('unrelated', 'keep me');
     sessionStorage.setItem('session', 'preserve these bytes');
@@ -62,9 +62,9 @@ describe('local-demo shell', () => {
       </React.StrictMode>,
     );
 
-    expect({ ...localStorage }).toEqual(localBefore);
+    expect({ ...localStorage }).toEqual({ ...localBefore, writespace_theme: 'light' });
     expect({ ...sessionStorage }).toEqual(sessionBefore);
-    expect(write).not.toHaveBeenCalled();
+    expect(write.mock.calls.every(([key, value]) => key === 'writespace_theme' && value === 'light')).toBe(true);
     expect(remove).not.toHaveBeenCalled();
     expect(clear).not.toHaveBeenCalled();
   });
@@ -87,11 +87,11 @@ describe('local-demo shell', () => {
     expect(screen.queryByRole('link', { name: 'Return home' })).not.toBeInTheDocument();
   });
 
-  /** Prove opening the shell does not initialize browser-local collections. */
-  it('leaves initially empty storage empty', () => {
+  /** Prove opening the shell initializes only its theme preference. */
+  it('leaves initially empty collections untouched', () => {
     renderShell();
 
-    expect(localStorage.length).toBe(0);
+    expect({ ...localStorage }).toEqual({ writespace_theme: 'light' });
     expect(sessionStorage.length).toBe(0);
   });
 });
@@ -151,6 +151,7 @@ it.each([
     createdAt: '2026-01-01', authorId: 'u1', authorName: 'Mira' }]));
   if (role) localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: 'u1', username: 'mira', displayName: 'Mira', role }));
   const before = { ...localStorage };
+  before.writespace_theme = 'light';
   routeView('/');
   expect(screen.getByLabelText('Current address').textContent).toBe('/');
   await userEvent.click(screen.getByRole('link', { name, exact: true }));
@@ -213,4 +214,84 @@ it.each([
   routeView('/edit/' + id);
   expect(screen.getByLabelText('Current address').textContent).toBe(destination);
   expect(screen.getByRole('heading', { name: heading })).toBeVisible();
+});
+
+describe('theme preference', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.documentElement.classList.remove('dark');
+  });
+
+  it.each([
+    [null, 'light'], ['light', 'light'], ['dark', 'dark'],
+    ['sepia', 'light'], ['"dark"', 'light'], ['', 'light'],
+  ])('initializes from raw value %s as %s', (saved, expected) => {
+    if (saved !== null) localStorage.setItem('writespace_theme', saved);
+    document.documentElement.classList.add('dark');
+    renderShell();
+    expect(document.documentElement.classList.contains('dark')).toBe(expected === 'dark');
+    expect(localStorage.getItem('writespace_theme')).toBe(expected);
+    expect(screen.getByRole('button', { name: expected === 'dark' ? 'Switch to light mode' : 'Switch to dark mode' })).toBeInTheDocument();
+  });
+
+  it('defaults to light when the theme read throws', () => {
+    const get = Storage.prototype.getItem;
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (key) {
+      if (key === 'writespace_theme') throw new Error('blocked');
+      return get.call(this, key);
+    });
+    document.documentElement.classList.add('dark');
+    renderShell();
+    expect(document.documentElement).not.toHaveClass('dark');
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
+  });
+
+  it('switches in both navbars, preserves selection across routes and persists both directions', async () => {
+    const user = userEvent.setup();
+    renderShell();
+    await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
+    expect(document.documentElement).toHaveClass('dark');
+    expect(localStorage.getItem('writespace_theme')).toBe('dark');
+    await user.click(within(screen.getByRole('navigation', { name: 'Public navigation' })).getByRole('link', { name: 'Login', exact: true }));
+    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Switch to light mode' }));
+    expect(document.documentElement).not.toHaveClass('dark');
+    expect(localStorage.getItem('writespace_theme')).toBe('light');
+  });
+
+  it('retains the chosen mode and data on write failure, then clears the warning on recovery', async () => {
+    localStorage.setItem(POSTS_KEY, '[]');
+    localStorage.setItem(USERS_KEY, '[]');
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: 'u1', username: 'mira', displayName: 'Mira', role: 'user' }));
+    const before = { ...localStorage };
+    const set = Storage.prototype.setItem;
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (key, value) {
+      if (key === 'writespace_theme') throw new Error('quota');
+      return set.call(this, key, value);
+    });
+    const user = userEvent.setup();
+    renderShell('/blogs');
+    expect(screen.getByRole('alert')).toHaveTextContent('may not persist');
+    await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
+    expect(document.documentElement).toHaveClass('dark');
+    expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
+    expect({ ...localStorage }).toEqual(before);
+    spy.mockRestore();
+    await user.click(screen.getByRole('button', { name: 'Switch to light mode' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(localStorage.getItem('writespace_theme')).toBe('light');
+  });
+
+  it('retains the saved dark preference when logging out', async () => {
+    localStorage.setItem('writespace_theme', 'dark');
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: 'u1', username: 'mira', displayName: 'Mira', role: 'user' }));
+    const user = userEvent.setup();
+    routeView('/blogs');
+    await user.click(screen.getByRole('button', { name: /Mira/ }));
+    await user.click(screen.getByRole('button', { name: 'Log out' }));
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+    expect(localStorage.getItem('writespace_theme')).toBe('dark');
+    expect(document.documentElement).toHaveClass('dark');
+    expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
+  });
 });

@@ -4,10 +4,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { readSession, SESSION_KEY } from '../utils/storage.js';
 import { currentRoleHome } from '../utils/auth.js';
 import { Avatar } from './Avatar.jsx';
+import { ThemeToggle } from './ThemeToggle.jsx';
+import PropTypes from 'prop-types';
 
-const control = 'inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-medium hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const control = 'inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-medium hover:bg-surface-raised dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 /** Show guest links or a role-home action without changing storage on render. */
-export function PublicNavbar() {
+export function PublicNavbar({ theme = 'light', onToggle = () => {} }) {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState(() => readSession().value);
   const location = useLocation();
@@ -24,7 +26,7 @@ export function PublicNavbar() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface"
+    <header className="sticky top-0 z-20 border-b border-border bg-surface dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
       onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false); }}>
       <nav aria-label="Public navigation" className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3 px-6 py-4 sm:px-10">
         <Link to="/" className={control + ' font-editorial text-2xl'}>
@@ -57,8 +59,14 @@ export function PublicNavbar() {
               </Link>
             </>
           )}
+          <ThemeToggle theme={theme} onToggle={onToggle} />
         </div>
       </nav>
     </header>
   );
 }
+
+PublicNavbar.propTypes = {
+  theme: PropTypes.oneOf(['light', 'dark']),
+  onToggle: PropTypes.func,
+};

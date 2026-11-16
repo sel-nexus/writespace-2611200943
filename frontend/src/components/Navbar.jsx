@@ -4,14 +4,16 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { readSession, SESSION_KEY } from '../utils/storage.js';
 import { currentRoleHome, logout } from '../utils/auth.js';
 import { Avatar } from './Avatar.jsx';
+import { ThemeToggle } from './ThemeToggle.jsx';
+import PropTypes from 'prop-types';
 
-const control = 'inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-medium hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const control = 'inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-medium hover:bg-surface-raised dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 /** Distinguish the current navigation destination using the inherited indigo palette. */
 function navClass({ isActive }) {
-  return control + (isActive ? ' bg-primary-50 text-primary-700 hover:bg-primary-100' : '');
+  return control + (isActive ? ' bg-primary-50 text-primary-700 hover:bg-primary-100 dark:bg-slate-800 dark:text-indigo-200 dark:hover:bg-slate-700' : '');
 }
 /** Render public or role-aware links with local menu state and fresh session reads. */
-export function Navbar() {
+export function Navbar({ theme = 'light', onToggle = () => {} }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +48,7 @@ export function Navbar() {
     if (event.key === 'Escape') { setMobileOpen(false); setAccountOpen(false); }
   }
   return (
-    <header className="border-b border-border" onKeyDown={closeOnEscape}>
+    <header className="border-b border-border dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" onKeyDown={closeOnEscape}>
       <nav aria-label="Main navigation" className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3 px-6 py-4 sm:px-10">
         <Link to="/" className={control + ' font-editorial text-2xl'}>
           WriteSpace
@@ -87,8 +89,8 @@ export function Navbar() {
                   {session.displayName}
                 </button>
                 {accountOpen && (
-                  <div id="account-links" className="absolute right-0 z-10 min-w-48 rounded-control border border-border bg-surface p-2 shadow-overlay">
-                    <p className="px-3 py-2 text-sm text-foreground-muted">
+                  <div id="account-links" className="absolute right-0 z-10 min-w-48 rounded-control border border-border bg-surface p-2 shadow-overlay dark:border-slate-700 dark:bg-slate-800">
+                    <p className="px-3 py-2 text-sm text-foreground-muted dark:text-slate-300">
                       {session.role === 'admin' ? 'Administrator' : 'Writer'}
                     </p>
 
@@ -109,6 +111,7 @@ export function Navbar() {
               </NavLink>
             </>
           )}
+          <ThemeToggle theme={theme} onToggle={onToggle} />
         </div>
       </nav>
       {error && (
@@ -119,3 +122,8 @@ export function Navbar() {
     </header>
   );
 }
+
+Navbar.propTypes = {
+  theme: PropTypes.oneOf(['light', 'dark']),
+  onToggle: PropTypes.func,
+};
